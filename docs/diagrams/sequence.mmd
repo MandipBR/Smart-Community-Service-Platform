@@ -1,0 +1,20 @@
+sequenceDiagram
+  participant User
+  participant UI
+  participant API
+  participant DB
+
+  User->>UI: Enter credentials
+  UI->>API: POST /login
+  API->>DB: Find user
+  DB-->>API: User record
+  API->>API: Verify password
+  API-->>UI: Token + user info
+  UI-->>User: Login success
+
+  User->>UI: Click Join
+  UI->>API: POST /applications
+  API->>DB: Save application
+  DB-->>API: Confirmation
+  API-->>UI: Status = Pending
+  UI-->>User: Confirmation shown

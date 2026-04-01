@@ -1,0 +1,30 @@
+flowchart TD
+  System[Smart Community Service Platform]
+  System --> VolunteerReg[Volunteer Registration]
+  System --> OrgReg[Organization Registration]
+  System --> OpportunityPosting[Post Volunteer Opportunities]
+  System --> ApplicationApproval[Application Approval]
+  System --> ActivityTracking[Track Hours & Impact]
+  System --> AdminOps[Admin Management]
+
+  VolunteerReg --> V1[Register]
+  VolunteerReg --> V2[Verify Email]
+  VolunteerReg --> V3[Login]
+
+  OrgReg --> O1[Register Org]
+  OrgReg --> O2[Admin Approval]
+  OrgReg --> O3[Org Login]
+
+  OpportunityPosting --> P1[Create Opportunity]
+  OpportunityPosting --> P2[Edit/Remove Opportunity]
+
+  ApplicationApproval --> A1[Apply]
+  ApplicationApproval --> A2[Review]
+  ApplicationApproval --> A3[Approve/Reject]
+
+  ActivityTracking --> T1[Log Hours]
+  ActivityTracking --> T2[Generate Reports]
+
+  AdminOps --> M1[Manage Users]
+  AdminOps --> M2[Approve Orgs]
+  AdminOps --> M3[Monitor Activity]

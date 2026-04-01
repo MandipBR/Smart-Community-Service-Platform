@@ -1,0 +1,54 @@
+erDiagram
+  USER ||--o{ APPLICATION : submits
+  USER ||--o{ VOLUNTEER_OPPORTUNITY : creates
+  VOLUNTEER_OPPORTUNITY ||--o{ APPLICATION : has
+  COMMUNITY_REQUEST ||--o{ VOLUNTEER_OPPORTUNITY : spawns
+  ADMIN ||--o{ ACTIVITY : logs
+
+  USER {
+    string _id
+    string name
+    string email
+    string password
+    string role
+    boolean isVerified
+  }
+
+  VOLUNTEER_OPPORTUNITY {
+    string _id
+    string title
+    string description
+    string location
+    date date
+    number duration
+    string[] skills
+    string orgId
+  }
+
+  APPLICATION {
+    string _id
+    string userId
+    string opportunityId
+    string status
+    string message
+  }
+
+  COMMUNITY_REQUEST {
+    string _id
+    string title
+    string description
+    string category
+  }
+
+  ADMIN {
+    string _id
+    string name
+    string email
+  }
+
+  ACTIVITY {
+    string _id
+    string adminId
+    string action
+    date timestamp
+  }

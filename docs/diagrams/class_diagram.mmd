@@ -1,0 +1,58 @@
+classDiagram
+  class User {
+    +String _id
+    +String name
+    +String email
+    +String password
+    +String role
+    +Boolean isVerified
+    +String verificationToken
+    +String organizationName
+    +String organizationType
+    +String orgApprovalStatus
+    +String phone
+    +String bio
+    +String location
+    +String availability
+    +String[] causes
+    +String[] skills
+    +Boolean onboardingCompleted
+  }
+
+  class TeamMember {
+    +String name
+    +String email
+    +String role
+  }
+
+  class Event {
+    +String _id
+    +String title
+    +String description
+    +Date date
+    +String location
+    +Number locationLat
+    +Number locationLng
+    +Number hours
+    +String[] tags
+    +String[] skills
+  }
+
+  class EventVolunteer {
+    +String user
+    +Boolean approved
+  }
+
+  class VolunteerLog {
+    +String _id
+    +String user
+    +String event
+    +Number hours
+    +Number pointsEarned
+  }
+
+  User "1" o-- "0..*" TeamMember : teamMembers
+  User "1" --> "0..*" Event : creates
+  Event "1" o-- "0..*" EventVolunteer : volunteers
+  User "1" --> "0..*" VolunteerLog : logs
+  Event "1" --> "0..*" VolunteerLog : trackedBy

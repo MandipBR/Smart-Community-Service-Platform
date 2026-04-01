@@ -1,0 +1,13 @@
+flowchart TD
+  Start([Start]) --> Register[Register User/Org]
+  Register --> Verify[Email Verification]
+  Verify --> Login[Login]
+  Login --> Dashboard[Dashboard]
+  Dashboard --> Browse[Browse Opportunities]
+  Browse --> Apply[Apply for Opportunity]
+  Apply --> Pending[Application Pending]
+  Pending --> Approved{Approved?}
+  Approved -->|Yes| Participate[Volunteer Participates]
+  Approved -->|No| Rejected[Application Rejected]
+  Participate --> Complete[Completion + Hours Logged]
+  Complete --> End([End])

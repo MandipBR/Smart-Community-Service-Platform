@@ -1,0 +1,146 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    color: #1F2937;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background: #F9FAFB;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .nepal-page {
+    min-height: 100vh;
+    color: #1F2937;
+    font-family: "Inter", system-ui, sans-serif;
+    background-image:
+      radial-gradient(900px 420px at 5% -10%, rgba(211, 47, 47, 0.12), transparent 60%),
+      radial-gradient(900px 420px at 95% 0%, rgba(30, 58, 138, 0.1), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,0.6), rgba(249,250,251,0)),
+      url("data:image/svg+xml,%3Csvg width='220' height='220' viewBox='0 0 120 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23D32F2F' fill-opacity='0.04'%3E%3Cpolygon points='0,0 120,40 0,40'/%3E%3Cpolygon points='0,40 120,140 0,140'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+    background-size: auto, auto, auto, 240px 240px;
+  }
+
+  .nepal-card {
+    @apply rounded-[14px] border border-slate-200/70 bg-cardWarm shadow-soft;
+  }
+
+  .nepal-button {
+    @apply inline-flex h-11 items-center justify-center rounded-xl bg-brandRed px-6 text-sm font-medium text-white transition-all duration-[250ms] ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lift focus:outline-none focus:ring-2 focus:ring-brandRed/30 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .nepal-button-secondary {
+    @apply inline-flex h-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 px-5 text-sm font-medium text-ink backdrop-blur-md transition-all duration-[250ms] ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-white hover:shadow-soft focus:outline-none focus:ring-2 focus:ring-brandBlue/20 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .nepal-input {
+    @apply h-11 rounded-[10px] border border-slate-200/90 bg-white/90 px-4 text-sm text-ink shadow-sm transition-all duration-[250ms] ease-out placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brandRed/25;
+  }
+
+  .section-title {
+    @apply font-heading text-[32px] font-semibold tracking-tight text-ink;
+  }
+
+  .page {
+    @apply nepal-page;
+  }
+  .shell {
+    @apply mx-auto flex w-full max-w-[1280px] flex-col gap-12 px-6 py-10;
+  }
+  .hero {
+    @apply relative overflow-hidden rounded-[20px] bg-hero-glow p-10 text-white shadow-soft;
+  }
+  .card {
+    @apply nepal-card p-6;
+  }
+  .button {
+    @apply nepal-button;
+  }
+  .button.secondary {
+    @apply nepal-button-secondary;
+  }
+  .input {
+    @apply nepal-input;
+  }
+  .title {
+    @apply font-heading text-[40px] font-semibold tracking-tight;
+  }
+  .subtitle {
+    @apply text-sm text-white/85;
+  }
+  .small {
+    @apply text-xs text-muted;
+  }
+  .pill {
+    @apply rounded-full bg-brandRed/10 px-3 py-1 text-xs text-brandRed;
+  }
+  .notice {
+    @apply rounded-xl bg-brandRed/10 p-3 text-sm text-brandRed;
+  }
+  .nav {
+    @apply flex items-center justify-between;
+  }
+  .nav-links {
+    @apply flex items-center gap-4 text-sm;
+  }
+  .toolbar {
+    @apply flex flex-wrap items-center justify-between gap-4;
+  }
+  .grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .cta-row {
+    @apply flex flex-wrap gap-3;
+  }
+  .panel {
+    @apply rounded-[20px] border border-white/70 bg-white/70 shadow-soft backdrop-blur-xl;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-muted;
+  }
+}
+
+@layer utilities {
+  .fade-in {
+    @apply animate-fadeUp;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, rgba(229,231,235,0.4) 25%, rgba(229,231,235,0.8) 37%, rgba(229,231,235,0.4) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph Frontend
+    UI[React Web UI]
+    VolunteerUI[Volunteer Interface]
+    OrgUI[Organization Interface]
+    AdminUI[Admin Panel]
+  end
+
+  subgraph Backend
+    API[Node.js / Express API]
+    Auth[Authentication & RBAC]
+  end
+
+  subgraph Database
+    DB[(MongoDB)]
+  end
+
+  UI --> API
+  VolunteerUI --> API
+  OrgUI --> API
+  AdminUI --> API
+
+  API --> Auth
+  API --> DB

@@ -1,0 +1,32 @@
+sequenceDiagram
+  participant Volunteer
+  participant UI
+  participant API
+  participant DB
+
+  Volunteer->>UI: Open opportunities page
+  UI->>API: GET /api/events
+  API->>DB: Fetch published opportunities
+  DB-->>API: Opportunities list
+  API-->>UI: Opportunities JSON
+  UI-->>Volunteer: Show opportunities
+
+  Volunteer->>UI: Apply / Join opportunity
+  UI->>API: POST /api/events/:id/join
+  API->>DB: Add volunteer request
+  DB-->>API: Updated event
+  API-->>UI: Request sent
+  UI-->>Volunteer: Status = Pending
+
+  Organization->>UI: Review applicants
+  UI->>API: PUT /api/events/:eventId/approve/:userId
+  API->>DB: Approve volunteer
+  DB-->>API: Updated event
+  API-->>UI: Approved
+  UI-->>Organization: Volunteer accepted
+
+  Organization->>UI: Mark attendance
+  UI->>API: POST /api/volunteer/log
+  API->>DB: Save volunteer log
+  DB-->>API: Log saved
+  API-->>UI: Hours recorded
