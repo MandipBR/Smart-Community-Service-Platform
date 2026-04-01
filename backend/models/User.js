@@ -28,12 +28,17 @@ const userSchema = new mongoose.Schema(
     verificationToken: String,
     resetToken: String,
 
+    // OTP for login
+    loginOtp: String,
+    loginOtpExpires: Date,
+
     // Gamification
     points: { type: Number, default: 0 },
     level: { type: Number, default: 1 },
     badges: [{ type: String }],
 
-    // Profile & onboarding
+    // Profile & identity
+    avatar: { type: String, default: "" },
     phone: String,
     bio: String,
     location: String,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api, { getUser, setAuth } from "../services/api";
-import Navbar from "../components/Navbar.jsx";
+import PageShell from "../components/PageShell.jsx";
 
 export default function OrgProfile() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function OrgProfile() {
     event.preventDefault();
     setMessage("");
     try {
-      await api.post("/auth/onboarding", {
+      await api.put("/users/profile", {
         organizationName: form.organizationName,
         phone: form.phone,
         location: form.location,
@@ -67,16 +67,7 @@ export default function OrgProfile() {
   };
 
   return (
-    <div className="nepal-page">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
-        <Navbar
-          links={[
-            { to: "/dashboard", label: "Dashboard" },
-            { to: "/events", label: "Browse events" },
-            { to: "/org/profile", label: "Profile" },
-            { to: "/org/analytics", label: "Analytics" },
-          ]}
-        />
+    <PageShell maxWidth="max-w-[960px]">
 
         <section className="nepal-card p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -224,8 +215,7 @@ export default function OrgProfile() {
             </button>
           </form>
         </section>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

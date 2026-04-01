@@ -1,4 +1,4 @@
-﻿import Event from "../models/Event.js";
+import Event from "../models/Event.js";
 import User from "../models/User.js";
 import VolunteerLog from "../models/VolunteerLog.js";
 import { createEventSchema } from "../validators/event.schemas.js";
@@ -86,8 +86,11 @@ export const getEvents = async (req, res, next) => {
 
     const filter = {};
 
+    const escape = (str) =>
+      (str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     if (q) {
-      const regex = new RegExp(q, "i");
+      const regex = new RegExp(escape(q), "i");
       filter.$or = [
         { title: regex },
         { description: regex },
@@ -96,7 +99,7 @@ export const getEvents = async (req, res, next) => {
     }
 
     if (location) {
-      filter.location = new RegExp(location, "i");
+      filter.location = new RegExp(escape(location), "i");
     }
 
     if (cause && cause !== "all") {
@@ -110,7 +113,7 @@ export const getEvents = async (req, res, next) => {
         .filter(Boolean);
       if (list.length) {
         filter.skills = {
-          $all: list.map((s) => new RegExp(s, "i")),
+          $all: list.map((s) => new RegExp(escape(s), "i")),
         };
       }
     }

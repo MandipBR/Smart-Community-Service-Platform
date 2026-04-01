@@ -16,7 +16,8 @@ export const listOrganizations = async (req, res) => {
     orgApprovalStatus: status,
   };
   if (q) {
-    const regex = new RegExp(q, "i");
+    const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedQ, "i");
     filter.$or = [
       { name: regex },
       { email: regex },
@@ -144,7 +145,8 @@ export const listUsers = async (req, res) => {
   }
 
   if (q) {
-    const regex = new RegExp(q, "i");
+    const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedQ, "i");
     filter.$or = [{ name: regex }, { email: regex }, { organizationName: regex }];
   }
 

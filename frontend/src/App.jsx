@@ -37,10 +37,15 @@ import OrgAnalytics from "./pages/OrgAnalytics.jsx";
 import OrgImpact from "./pages/OrgImpact.jsx";
 import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminEvents from "./pages/AdminEvents.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import Settings from "./pages/Settings.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Screen Reader Route Announcer */}
+      <div id="route-announcer" className="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
@@ -238,6 +243,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.VOLUNTEER, ROLES.ORGANIZATION, ROLES.ADMIN]}>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

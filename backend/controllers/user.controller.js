@@ -1,5 +1,32 @@
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
+import multer from "multer";
+import path from "path";
+
+// Multer config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only images are allowed"), false);
+  }
+};
+
+export const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+});
 
 export const getMe = async (req, res) => {
   res.json({
@@ -7,6 +34,7 @@ export const getMe = async (req, res) => {
     name: req.user.name,
     email: req.user.email,
     role: req.user.role,
+    avatar: req.user.avatar,
     onboardingCompleted: req.user.onboardingCompleted,
     profile: {
       phone: req.user.phone,
@@ -25,7 +53,7 @@ export const getMe = async (req, res) => {
 
 export const getUserById = async (req, res) => {
   const user = await User.findById(req.params.id).select(
-    "name email role bio location causes skills organizationName organizationType orgApprovalStatus"
+    "name email role bio location causes skills organizationName organizationType orgApprovalStatus avatar"
   );
   if (!user) {
     return res.status(404).json({ message: "User not found" });
@@ -45,10 +73,8 @@ export const updateProfile = async (req, res) => {
   };
 
   if (req.user.role === "organization") {
-    update.organizationName =
-      req.body.organizationName ?? req.user.organizationName;
-    update.organizationType =
-      req.body.organizationType ?? req.user.organizationType;
+    update.organizationName = req.body.organizationName ?? req.user.organizationName;
+    update.organizationType = req.body.organizationType ?? req.user.organizationType;
     update.teamMembers = Array.isArray(req.body.teamMembers)
       ? req.body.teamMembers
       : req.user.teamMembers;
@@ -75,4 +101,19 @@ export const updateProfile = async (req, res) => {
   }
 
   res.json({ message: "Profile updated" });
+};
+
+export const uploadAvatar = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "Please upload a file" });
+  }
+
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  req.user.avatar = avatarUrl;
+  await req.user.save();
+
+  res.json({
+    message: "Avatar uploaded successfully",
+    avatar: avatarUrl,
+  });
 };

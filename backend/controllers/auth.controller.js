@@ -159,12 +159,69 @@ export const login = async (req, res) => {
   try {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
+
+    // Bypass OTP for admins
+    if (user.role === "admin") {
+      return res.json({
+        token: generateToken(user),
+        user: {
+          id: user._id,
+          name: user.name,
+          role: user.role,
+        },
+      });
+    }
   } catch (err) {
     console.error("Password hash error:", err);
-    return res
-      .status(400)
-      .json({ message: "Invalid password hash for this account" });
+    return res.status(400).json({ message: "Invalid password hash" });
   }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  user.loginOtp = await bcrypt.hash(otp, 10);
+  user.loginOtpExpires = Date.now() + 5 * 60 * 1000; // 5 mins
+  await user.save();
+
+  try {
+    await sendEmail(
+      user.email,
+      "Your Login OTP - Smart Community",
+      `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 400px;">
+        <h2 style="color: #d32f2f; margin-top: 0;">Login Verification</h2>
+        <p>Use the following code to complete your sign-in. It expires in 5 minutes.</p>
+        <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e3a8a; background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p style="font-size: 12px; color: #64748b;">If you didn't request this, you can safely ignore this email.</p>
+      </div>`
+    );
+    res.json({ message: "OTP sent to your email", step: "otp" });
+  } catch (err) {
+    console.error("OTP Email failed:", err);
+    res.status(500).json({ message: "Failed to send OTP email" });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
+
+  const user = await User.findOne({ email });
+  if (!user || !user.loginOtp || !user.loginOtpExpires) {
+    return res.status(401).json({ message: "Invalid session" });
+  }
+
+  if (user.loginOtpExpires < Date.now()) {
+    return res.status(401).json({ message: "OTP expired" });
+  }
+
+  const match = await bcrypt.compare(otp, user.loginOtp);
+  if (!match) return res.status(401).json({ message: "Invalid OTP" });
+
+  // Clear OTP
+  user.loginOtp = undefined;
+  user.loginOtpExpires = undefined;
+  await user.save();
 
   res.json({
     token: generateToken(user),
@@ -174,6 +231,23 @@ export const login = async (req, res) => {
       role: user.role,
     },
   });
+};
+
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (!user.password) {
+    return res.status(400).json({ message: "Google accounts cannot change password here" });
+  }
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) return res.status(401).json({ message: "Incorrect current password" });
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  res.json({ message: "Password updated successfully" });
 };
 
 export const googleSignIn = async (req, res) => {

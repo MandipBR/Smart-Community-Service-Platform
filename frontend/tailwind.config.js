@@ -1,29 +1,31 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
         brandRed: "#D32F2F",
         brandBlue: "#1E3A8A",
-        warmBg: "#F3E2C7",
-        cardWarm: "#FFF9F0",
-        ink: "#1F2937",
-        muted: "#6B7280",
+        warmBg: "var(--bg-warm)",
+        cardWarm: "var(--bg-card)",
+        ink: "var(--text-ink)",
+        muted: "var(--text-muted)",
+        surface: "var(--bg-surface)",
       },
       fontFamily: {
         heading: ["Plus Jakarta Sans", "Inter", "sans-serif"],
         body: ["Inter", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 18px 40px rgba(15, 23, 42, 0.12)",
-        lift: "0 24px 50px rgba(15, 23, 42, 0.18)",
+        soft: "var(--shadow-soft)",
+        lift: "var(--shadow-lift)",
       },
       borderRadius: {
         xl: "14px",
       },
       backgroundImage: {
-        "nepal-wash": "radial-gradient(1000px 400px at 5% -10%, rgba(211,47,47,0.18), transparent 60%), radial-gradient(900px 500px at 95% 0%, rgba(30,58,138,0.14), transparent 60%), linear-gradient(135deg, rgba(243,226,199,0.9), rgba(255,249,240,0.95))",
+        "nepal-wash": "var(--bg-nepal-wash)",
         "hero-glow": "linear-gradient(135deg, #D32F2F 0%, #1E3A8A 100%)",
       },
       keyframes: {
