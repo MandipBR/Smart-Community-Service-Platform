@@ -9,7 +9,7 @@ const ROLE_LINKS = {
   volunteer: [
     { to: "/dashboard", labelKey: "nav.dashboard" },
     { to: "/events", labelKey: "nav.events" },
-    { to: "/my-events", labelKey: "nav.my_events" },
+    { to: "/my-events", labelKey: "nav.my_missions" },
     { to: "/profile", labelKey: "nav.profile" },
     { to: "/leaderboard", labelKey: "nav.leaderboard" },
   ],

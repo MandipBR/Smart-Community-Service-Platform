@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api, { getUserFromToken } from "../services/api";
 import PageShell from "../components/PageShell.jsx";
 import Hero from "../components/Hero.jsx";
@@ -13,6 +14,7 @@ import BadgePill from "../components/BadgePill.jsx";
 const statusTabs = ["all", "pending", "approved", "completed"];
 
 export default function MyEvents() {
+  const { t } = useTranslation();
   const authUser = getUserFromToken();
   const userId = authUser?.id || authUser?._id;
   const [events, setEvents] = useState([]);
@@ -51,28 +53,28 @@ export default function MyEvents() {
   return (
     <PageShell
       links={[
-        { to: "/dashboard", label: "Dashboard" },
-        { to: "/profile", label: "Profile" },
-        { to: "/events", label: "Explore" },
+        { to: "/dashboard", label: t("nav.dashboard") },
+        { to: "/profile", label: t("nav.profile") },
+        { to: "/events", label: t("nav.events") },
       ]}
     >
       <Hero
-        badge="My Events"
-        title="Track every event you’ve joined from one place"
-        subtitle="See pending requests, approved opportunities, and completed service work without losing the thread."
+        badge={t("nav.my_missions")}
+        title={t("my_events.hero_title")}
+        subtitle={t("my_events.hero_subtitle")}
         height="min-h-[320px]"
       />
 
       <section className="nepal-card p-8">
         <SectionHeader
-          eyebrow="Event History"
-          title="Joined, approved, and completed opportunities"
-          actions={<input className="nepal-input w-full min-w-[240px] sm:w-[280px]" placeholder="Search your events" value={query} onChange={(e) => setQuery(e.target.value)} />}
+          eyebrow={t("my_events.activity_history")}
+          title={t("my_events.activity_title")}
+          actions={<input className="nepal-input w-full min-w-[240px] sm:w-[280px]" placeholder={t("my_events.search_placeholder")} value={query} onChange={(e) => setQuery(e.target.value)} />}
         />
         <div className="mt-6 flex flex-wrap gap-3">
           {statusTabs.map((tab) => (
             <button key={tab} type="button" className={status === tab ? "nepal-button-secondary border-brandBlue/40 bg-brandBlue/[0.08]" : "nepal-button-secondary"} onClick={() => setStatus(tab)}>
-              {tab}
+              {t(`my_events.status.${tab}`)}
             </button>
           ))}
         </div>
@@ -81,7 +83,7 @@ export default function MyEvents() {
       {loading ? <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"><LoadingSkeleton className="h-[220px] w-full" count={3} /></div> : null}
       {message ? <ErrorState message={message} /> : null}
       {!loading && !message && filtered.length === 0 ? (
-        <EmptyState title="No events found" message="Your joined events will appear here once you request to join or complete an opportunity." action={<Link className="nepal-button" to="/events">Browse events</Link>} />
+        <EmptyState title={t("my_events.empty_title")} message={t("my_events.empty_message")} action={<Link className="nepal-button" to="/events">{t("my_events.browse_cta")}</Link>} />
       ) : null}
 
       {!loading && filtered.length > 0 ? (

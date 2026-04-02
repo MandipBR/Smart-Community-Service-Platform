@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import api, { getToken, getUser, getUserFromToken, setAuth } from "../services/api";
 import PageShell from "../components/PageShell.jsx";
@@ -7,6 +8,7 @@ import AvatarUpload from "../components/AvatarUpload.jsx";
 import StatCard from "../components/StatCard.jsx";
 
 export default function ProfileHub() {
+  const { t } = useTranslation();
   const authUser = getUserFromToken();
   const cachedUser = getUser();
   const userId = authUser?.id || authUser?._id || cachedUser?.id;
@@ -123,7 +125,7 @@ export default function ProfileHub() {
               <p className="mt-1 text-sm text-muted">A chronicle of your community impact.</p>
             </div>
             <Link to="/my-events" className="text-xs font-bold text-brandRed hover:underline">
-              View all
+              {t("my_events.view_all")}
             </Link>
           </div>
 

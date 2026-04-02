@@ -61,7 +61,12 @@ export default function OrgDashboard() {
   const [orgStatus] = useState(currentUser?.orgApprovalStatus);
   const [attendanceEventId, setAttendanceEventId] = useState("");
   const [attendanceList, setAttendanceList] = useState([]);
+  const [selectedVolunteerIds, setSelectedVolunteerIds] = useState([]);
   const [attendanceMessage, setAttendanceMessage] = useState("");
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [summaryData, setSummaryData] = useState([]);
+  const [notificationHistory, setNotificationHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState("attendance"); // attendance, summary, history
   const [loading, setLoading] = useState(true);
   const hasLoaded = useRef(false);
 
@@ -103,7 +108,13 @@ export default function OrgDashboard() {
       }
       try {
         const res = await api.get(`/attendance/event/${attendanceEventId}`);
-        setAttendanceList(Array.isArray(res?.data?.volunteers) ? res.data.volunteers : []);
+        const volunteers = Array.isArray(res?.data?.data)
+          ? res.data.data
+          : Array.isArray(res?.data?.volunteers)
+          ? res.data.volunteers
+          : [];
+        setAttendanceList(volunteers);
+        setAttendanceMessage("");
       } catch (err) {
         setAttendanceMessage(err?.response?.data?.message || "Attendance sync failed.");
       }
@@ -112,25 +123,162 @@ export default function OrgDashboard() {
   }, [attendanceEventId]);
 
   const handleMarkAttendance = async (userId, status) => {
+  try {
+    await api.post("/attendance/mark", {
+      eventId: attendanceEventId,
+      userId,
+      status,
+    });
+    setAttendanceList((prev) =>
+      prev.map((item) =>
+        item.userId === userId
+          ? { ...item, status, verifiedByOrg: true }
+          : item
+      )
+    );
+    setAttendanceMessage("");
+  } catch (err) {
+    setAttendanceMessage(err?.response?.data?.message || "Update failed.");
+  }
+};
+
+  const toggleVolunteerSelection = (userId) => {
+    setSelectedVolunteerIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const selectAllVolunteers = () => {
+    const ids = attendanceList.map((item) => item.userId).filter(Boolean);
+    setSelectedVolunteerIds(ids);
+  };
+
+  const clearAllSelection = () => {
+    setSelectedVolunteerIds([]);
+  };
+
+  const handleBulkMark = async (status) => {
+    if (!attendanceEventId || selectedVolunteerIds.length === 0) {
+      setAttendanceMessage("No volunteers selected for bulk action.");
+      return;
+    }
+
     try {
-      await api.post("/attendance/mark", {
+      setIsBulkUpdating(true);
+      const payload = {
         eventId: attendanceEventId,
-        userId,
-        status,
-        verifiedByOrg: true,
-      });
-      setAttendanceList((prev) =>
-        prev.map((item) =>
-          item.userId === userId
-            ? { ...item, status, verifiedByOrg: true }
+        updates: selectedVolunteerIds.map((userId) => ({ userId, status })),
+      };
+
+      const res = await api.post("/attendance/bulk-mark", payload);
+      const updatedVolunteers = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
+
+      setAttendanceList((prev) => {
+        const updatedMap = new Map(
+          updatedVolunteers.map((vol) => [vol.userId, vol])
+        );
+        const newList = prev.map((item) =>
+          updatedMap.has(item.userId)
+            ? { ...item, ...updatedMap.get(item.userId) }
             : item
-        )
-      );
-      setAttendanceMessage("");
+        );
+
+        // Add any newly created attendances for volunteers not previously in list
+        const newVolunteers = updatedVolunteers
+          .filter((vol) => !newList.some((item) => item.userId === vol.userId));
+
+        return [...newList, ...newVolunteers];
+      });
+
+      setAttendanceMessage(res?.data?.message || "Bulk update successful.");
+      setSelectedVolunteerIds([]);
     } catch (err) {
-      setAttendanceMessage(err?.response?.data?.message || "Update failed.");
+      setAttendanceMessage(err?.response?.data?.message || "Bulk update failed.");
+    } finally {
+      setIsBulkUpdating(false);
     }
   };
+
+  const handleExportCSV = async () => {
+    if (!attendanceEventId) {
+      setAttendanceMessage("Select an event to export.");
+      return;
+    }
+    try {
+      const response = await api.get(`/attendance/event/${attendanceEventId}/export`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attendance_${attendanceEventId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      setAttendanceMessage("Export failed.");
+    }
+  };
+
+  const handleDownloadCertificate = async (userId) => {
+    try {
+      const response = await api.get(`/attendance/certificate/${attendanceEventId}/${userId}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `certificate_${userId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      setAttendanceMessage("Certificate download failed.");
+    }
+  };
+
+  const handleBulkCertificates = async () => {
+    if (!attendanceEventId) {
+      setAttendanceMessage("Select an event for certificates.");
+      return;
+    }
+    try {
+      const res = await api.get(`/attendance/certificates/${attendanceEventId}`);
+      // For simplicity, download each; in production, handle zip
+      res.data.data.forEach((cert) => {
+        window.open(cert.downloadUrl, '_blank');
+      });
+    } catch {
+      setAttendanceMessage("Bulk certificates failed.");
+    }
+  };
+
+  const loadSummary = async () => {
+    try {
+      const res = await api.get("/attendance/summary");
+      setSummaryData(Array.isArray(res?.data?.data) ? res.data.data : []);
+    } catch {
+      console.error("Summary load failed");
+    }
+  };
+
+  const loadNotificationHistory = async () => {
+    try {
+      const res = await api.get("/attendance/notifications/history");
+      setNotificationHistory(Array.isArray(res?.data?.data) ? res.data.data : []);
+    } catch {
+      console.error("History load failed");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "summary") loadSummary();
+    if (activeTab === "history") loadNotificationHistory();
+  }, [activeTab]);
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
@@ -371,71 +519,196 @@ export default function OrgDashboard() {
                 <h3 className="text-2xl font-bold text-ink">{t('org.verification')}</h3>
                 <p className="mt-2 text-md text-muted font-medium">Verify service and award community points.</p>
               </div>
-              <select 
-                className="h-12 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-ink outline-none"
-                value={attendanceEventId}
-                onChange={e => setAttendanceEventId(e.target.value)}
-              >
-                <option value="">{t('org.select_verify')}</option>
-                {ownEvents.map(ev => (
-                  <option key={ev._id} value={ev._id}>{ev.title}</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <button
+                  className="nepal-button bg-green-600 text-white h-10"
+                  onClick={() => setActiveTab("attendance")}
+                >
+                  {t('org.attendance_tab')}
+                </button>
+                <button
+                  className="nepal-button bg-blue-600 text-white h-10"
+                  onClick={() => setActiveTab("summary")}
+                >
+                  {t('org.summary_tab')}
+                </button>
+                <button
+                  className="nepal-button bg-purple-600 text-white h-10"
+                  onClick={() => setActiveTab("history")}
+                >
+                  {t('org.history_tab')}
+                </button>
+              </div>
             </div>
 
-            {attendanceMessage && (
-              <div className="mb-8 rounded-2xl bg-red-50 p-5 text-sm font-bold text-brandRed flex items-center gap-3">
-                <span className="text-lg">✕</span>
-                {attendanceMessage}
+            {activeTab === "attendance" && (
+              <>
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-6">
+                  <select 
+                    className="h-12 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-ink outline-none"
+                    value={attendanceEventId}
+                    onChange={e => setAttendanceEventId(e.target.value)}
+                  >
+                    <option value="">{t('org.select_verify')}</option>
+                    {ownEvents.map(ev => (
+                      <option key={ev._id} value={ev._id}>{ev.title}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <button
+                      className="nepal-button bg-orange-600 text-white h-10"
+                      onClick={handleExportCSV}
+                      disabled={!attendanceEventId}
+                    >
+                      {t('org.export_csv')}
+                    </button>
+                    <button
+                      className="nepal-button bg-red-600 text-white h-10"
+                      onClick={handleBulkCertificates}
+                      disabled={!attendanceEventId}
+                    >
+                      {t('org.bulk_certificates')}
+                    </button>
+                  </div>
+                </div>
+
+                {attendanceMessage && (
+                  <div className="mb-8 rounded-2xl bg-red-50 p-5 text-sm font-bold text-brandRed flex items-center gap-3">
+                    <span className="text-lg">✕</span>
+                    {attendanceMessage}
+                  </div>
+                )}
+
+                <div className="mb-4 flex flex-wrap items-center gap-3">
+                  <button
+                    className="nepal-button bg-blue-600 text-white h-10"
+                    onClick={selectAllVolunteers}
+                    disabled={attendanceList.length === 0}
+                  >
+                    {t('org.select_all')}
+                  </button>
+                  <button
+                    className="nepal-button bg-purple-600 text-white h-10"
+                    onClick={clearAllSelection}
+                    disabled={selectedVolunteerIds.length === 0}
+                  >
+                    {t('org.clear_selection')}
+                  </button>
+                  <button
+                    className="nepal-button bg-emerald-600 text-white h-10"
+                    onClick={() => handleBulkMark('present')}
+                    disabled={selectedVolunteerIds.length === 0 || isBulkUpdating}
+                  >
+                    {t('org.mark_present')}
+                  </button>
+                  <button
+                    className="nepal-button bg-brandRed text-white h-10"
+                    onClick={() => handleBulkMark('absent')}
+                    disabled={selectedVolunteerIds.length === 0 || isBulkUpdating}
+                  >
+                    {t('org.mark_absent')}
+                  </button>
+                  <span className="text-sm text-muted">{selectedVolunteerIds.length} {t('org.selected')}</span>
+                </div>
+
+                <div className="grid gap-6">
+                  {attendanceList.length > 0 ? (
+                    attendanceList.map(vol => (
+                      <div key={vol.userId} className="nepal-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:shadow-lg transition-all border-slate-100">
+                        <div className="mr-3 flex items-center">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={selectedVolunteerIds.includes(vol.userId)}
+                            onChange={() => toggleVolunteerSelection(vol.userId)}
+                          />
+                        </div>
+                        <div className="flex items-center gap-5">
+                          <div className="h-14 w-14 rounded-2xl bg-brandRed/5 flex items-center justify-center text-xl font-bold text-brandRed border border-brandRed/10">
+                            {(vol.name && vol.name.length > 0 ? vol.name.charAt(0) : "V")}
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-ink">{vol.name || t('org.default_volunteer_name') || "Volunteer"}</p>
+                            <p className="text-[11px] uppercase tracking-widest font-bold text-muted/60 mt-1">{vol.email || ""}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                          <button
+                            className="nepal-button bg-yellow-600 text-white h-8 text-xs"
+                            onClick={() => handleDownloadCertificate(vol.userId)}
+                          >
+                            {t('org.download_cert')}
+                          </button>
+                          <button 
+                            onClick={() => handleMarkAttendance(vol.userId, 'present')}
+                            className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                              vol.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-muted hover:border-emerald-200 hover:text-emerald-600'
+                            }`}
+                          >
+                            {t('common.present')}
+                          </button>
+                          <button 
+                            onClick={() => handleMarkAttendance(vol.userId, 'absent')}
+                            className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                              vol.status === 'absent' ? 'bg-brandRed text-white' : 'bg-white border border-slate-200 text-muted hover:border-red-200 hover:text-brandRed'
+                            }`}
+                          >
+                            {t('common.absent')}
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : attendanceEventId ? (
+                    <div className="py-20 text-center bg-white rounded-[28px] border border-slate-100">
+                      <div className="text-5xl mb-6 opacity-10">👥</div>
+                      <p className="text-md text-muted font-bold uppercase tracking-widest">{t('org.no_apps')}</p>
+                    </div>
+                  ) : (
+                    <div className="py-24 border-4 border-dashed border-slate-100 rounded-[28px] text-center">
+                       <div className="text-4xl mb-6 opacity-20">📋</div>
+                       <p className="text-xs font-bold text-muted/40 uppercase tracking-[0.3em]">{t('org.select_active_initiative')}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {activeTab === "summary" && (
+              <div className="grid gap-6">
+                <h4 className="text-xl font-bold">{t('org.participation_summary')}</h4>
+                {summaryData.length > 0 ? (
+                  summaryData.map((item) => (
+                    <div key={item.userId} className="nepal-card p-6">
+                      <p className="font-bold">{item.name} ({item.email})</p>
+                      <p>Total Hours: {item.totalHours}</p>
+                      <p>Events Attended: {item.eventsAttended}</p>
+                      <p>Present: {item.presentCount}, Absent: {item.absentCount}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No summary data available.</p>
+                )}
               </div>
             )}
 
-            <div className="grid gap-6">
-              {attendanceList.length > 0 ? (
-                attendanceList.map(vol => (
-                  <div key={vol.userId} className="nepal-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:shadow-lg transition-all border-slate-100">
-                    <div className="flex items-center gap-5">
-                      <div className="h-14 w-14 rounded-2xl bg-brandRed/5 flex items-center justify-center text-xl font-bold text-brandRed border border-brandRed/10">
-                        {vol.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-lg font-bold text-ink">{vol.name}</p>
-                        <p className="text-[11px] uppercase tracking-widest font-bold text-muted/60 mt-1">{vol.email}</p>
-                      </div>
+            {activeTab === "history" && (
+              <div className="grid gap-6">
+                <h4 className="text-xl font-bold">{t('org.notification_history')}</h4>
+                {notificationHistory.length > 0 ? (
+                  notificationHistory.map((notif) => (
+                    <div key={notif.id} className="nepal-card p-6">
+                      <p className="font-bold">{notif.volunteerName} ({notif.volunteerEmail})</p>
+                      <p>Type: {notif.type}</p>
+                      <p>Message: {notif.message}</p>
+                      <p>Timestamp: {new Date(notif.timestamp).toLocaleString()}</p>
                     </div>
-                    
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                       <button 
-                        onClick={() => handleMarkAttendance(vol.userId, 'present')}
-                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
-                          vol.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-muted hover:border-emerald-200 hover:text-emerald-600'
-                        }`}
-                       >
-                         {t('common.present')}
-                       </button>
-                       <button 
-                        onClick={() => handleMarkAttendance(vol.userId, 'absent')}
-                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
-                          vol.status === 'absent' ? 'bg-brandRed text-white' : 'bg-white border border-slate-200 text-muted hover:border-red-200 hover:text-brandRed'
-                        }`}
-                       >
-                         {t('common.absent')}
-                       </button>
-                    </div>
-                  </div>
-                ))
-              ) : attendanceEventId ? (
-                <div className="py-20 text-center bg-white rounded-[28px] border border-slate-100">
-                  <div className="text-5xl mb-6 opacity-10">👥</div>
-                  <p className="text-md text-muted font-bold uppercase tracking-widest">{t('org.no_apps')}</p>
-                </div>
-              ) : (
-                <div className="py-24 border-4 border-dashed border-slate-100 rounded-[28px] text-center">
-                   <div className="text-4xl mb-6 opacity-20">📋</div>
-                   <p className="text-xs font-bold text-muted/40 uppercase tracking-[0.3em]">{t('org.select_active_initiative')}</p>
-                </div>
-              )}
-            </div>
+                  ))
+                ) : (
+                  <p>No notification history available.</p>
+                )}
+              </div>
+            )}
           </section>
         </div>
 
