@@ -33,7 +33,12 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin(origin, callback) {
+      // Allow tools/server-side requests without an Origin header
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("CORS origin not allowed"), false);
+    },
     credentials: true,
   })
 );

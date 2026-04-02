@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api, { setAuth } from "../services/api";
+import { useTranslation } from "react-i18next";
 import PageMeta from "../components/PageMeta.jsx";
+import authVibe from "../assets/i18n/auth-vibe.png";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -112,24 +115,29 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F9FAFB]">
+    <div className="flex min-h-screen bg-surface">
       <PageMeta 
-        title={step === "otp" ? "Verify OTP" : "Sign In"} 
-        description="Access your Smart Community workspace." 
+        title={step === "otp" ? t('auth.otp_header') : t('auth.signin')} 
+        description={t('auth.welcome_subtitle')} 
       />
       {/* left visual panel */}
-      <section className="hidden flex-1 items-center justify-center bg-gradient-to-br from-brandRed to-brandBlue p-12 lg:flex">
-        <div className="max-w-md space-y-6 text-white">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
+      <section className="relative hidden flex-1 items-center justify-center overflow-hidden lg:flex">
+        <img 
+          src={authVibe} 
+          alt="Community Connection" 
+          className="absolute inset-0 h-full w-full object-cover brightness-[0.85]" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-brandRed/40 to-brandBlue/40 mix-blend-multiply" />
+        
+        <div className="relative z-10 max-w-md space-y-6 p-12 text-white animate-fadeUp">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30">
             <span className="text-lg font-bold">SC</span>
           </div>
-          <h1 className="font-heading text-4xl font-semibold tracking-tight">
-            {step === "otp" ? "Identity Verification" : "Welcome back to Smart Community"}
+          <h1 className="font-heading text-4xl font-bold tracking-tight">
+            {step === "otp" ? t('auth.otp_header') : t('auth.welcome')}
           </h1>
-          <p className="text-sm leading-7 text-white/80">
-            {step === "otp"
-              ? "We've sent a 6-digit code to your email. Please enter it to complete your secure sign-in."
-              : "Jump into local events, track your impact, and help your community thrive. Join hundreds of volunteers building a stronger Nepal."}
+          <p className="text-sm leading-8 text-white/90">
+            {step === "otp" ? t('auth.otp_desc') : t('auth.welcome_subtitle')}
           </p>
         </div>
       </section>
@@ -146,25 +154,25 @@ export default function Login() {
           </div>
 
           <div>
-            <h2 className="font-heading text-2xl font-semibold text-ink">
-              {step === "otp" ? "Enter verification code" : "Sign in"}
+            <h2 className="font-heading text-3xl font-bold text-ink">
+              {step === "otp" ? t('auth.otp_header') : t('auth.signin')}
             </h2>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-2 text-sm text-muted">
               {step === "otp" ? (
                 <>
-                  Code sent to <span className="font-medium text-ink">{email}</span>.{" "}
+                  {t('auth.resend')} <span className="font-medium text-ink">{email}</span>.{" "}
                   <button
                     onClick={() => setStep("credentials")}
-                    className="text-brandRed hover:underline font-medium"
+                    className="text-brandRed hover:underline font-bold"
                   >
-                    Change email
+                    {t('auth.change_email')}
                   </button>
                 </>
               ) : (
                 <>
-                  Don&rsquo;t have an account?{" "}
-                  <Link className="font-medium text-brandRed hover:underline" to="/signup-choice">
-                    Create one
+                  {t('auth.signup_link')}{" "}
+                  <Link className="font-bold text-brandRed hover:underline" to="/signup-choice">
+                    {t('auth.create_one')}
                   </Link>
                 </>
               )}
@@ -184,9 +192,9 @@ export default function Login() {
           {step === "credentials" ? (
             <>
               {/* Google sign-in */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="nepal-field">
-                  <label htmlFor="google-role" className="nepal-label">Sign in as</label>
+                  <label htmlFor="google-role" className="nepal-label">{t('auth.signin_as')}</label>
                   <select
                     id="google-role"
                     className="nepal-input"
@@ -199,18 +207,18 @@ export default function Login() {
                 </div>
                 <div id="googleSignIn" className="flex justify-center" />
               </div>
-
+ 
               {/* divider */}
-              <div className="flex items-center gap-3 text-xs text-muted">
-                <span className="h-px flex-1 bg-slate-200" />
-                or sign in with email
-                <span className="h-px flex-1 bg-slate-200" />
+              <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+                <span className="h-px flex-1 bg-slate-100" />
+                {t('auth.signin_with_email')}
+                <span className="h-px flex-1 bg-slate-100" />
               </div>
 
               {/* email / password form */}
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div className="nepal-field">
-                  <label htmlFor="login-email" className="nepal-label">Email address</label>
+                  <label htmlFor="login-email" className="nepal-label">{t('auth.email')}</label>
                   <input
                     id="login-email"
                     className="nepal-input"
@@ -223,37 +231,37 @@ export default function Login() {
                   />
                 </div>
                 <div className="nepal-field">
-                  <label htmlFor="login-password" className="nepal-label">Password</label>
+                  <label htmlFor="login-password" className="nepal-label">{t('auth.password')}</label>
                   <div className="relative">
                     <input
                       id="login-password"
-                      className="nepal-input pr-12"
+                      className="nepal-input pr-12 font-medium"
                       type={showPw ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
-                      placeholder="Your password"
+                      placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw(!showPw)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted hover:text-ink transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-widest text-muted hover:text-ink transition-colors"
                       aria-label={showPw ? "Hide password" : "Show password"}
                     >
-                      {showPw ? "HIDE" : "SHOW"}
+                      {showPw ? t('auth.hide') : t('auth.show')}
                     </button>
                   </div>
                 </div>
-
-                <button className="nepal-button w-full" type="submit" disabled={loading}>
+ 
+                <button className="nepal-button w-full shadow-lift" type="submit" disabled={loading}>
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Connecting...
+                      {t('auth.connecting')}
                     </span>
                   ) : (
-                    "Continue"
+                    t('common.continue')
                   )}
                 </button>
               </form>
@@ -262,7 +270,7 @@ export default function Login() {
             /* OTP step */
             <form className="space-y-6" onSubmit={handleVerifyOtp}>
               <div className="nepal-field">
-                <label htmlFor="otp-input" className="nepal-label">Verification Code</label>
+                <label htmlFor="otp-input" className="nepal-label">{t('auth.otp_label')}</label>
                 <input
                   id="otp-input"
                   className="nepal-input text-center text-2xl tracking-[0.5em] font-bold h-14"
@@ -276,35 +284,35 @@ export default function Login() {
                   placeholder="000000"
                 />
               </div>
-
+ 
               <div className="space-y-3">
                 <button className="nepal-button w-full" type="submit" disabled={loading}>
-                  {loading ? "Verifying..." : "Verify & Sign in"}
+                  {loading ? t('common.loading') : t('auth.otp_verify')}
                 </button>
                 <button
                   type="button"
                   onClick={handleLogin}
-                  className="w-full text-sm font-medium text-muted hover:text-ink transition-colors"
+                  className="w-full text-[11px] font-bold uppercase tracking-widest text-muted hover:text-ink transition-colors"
                   disabled={loading}
                 >
-                  Resend code
+                  {t('auth.resend')}
                 </button>
               </div>
             </form>
           )}
 
           {/* footer links */}
-          <div className="text-center text-sm text-muted">
-            <Link className="font-medium text-brandRed hover:underline" to="/org-login">
-              Organization portal
+          <div className="text-center text-[13px] font-bold text-muted/60">
+            <Link className="text-brandRed hover:underline" to="/org-login">
+              {t('auth.org_portal')}
             </Link>
-            <span className="mx-2">·</span>
-            <Link className="font-medium text-brandRed hover:underline" to="/org-signup">
-              Become a partner
+            <span className="mx-3 opacity-20">|</span>
+            <Link className="text-brandRed hover:underline" to="/org-signup">
+              {t('auth.become_partner')}
             </Link>
           </div>
         </div>
-      </section> section
+      </section>
     </div>
   );
 }

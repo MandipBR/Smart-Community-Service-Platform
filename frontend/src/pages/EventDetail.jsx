@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import api, { getUser, hasToken } from "../services/api";
+import api, { getUser, getUserFromToken, hasToken } from "../services/api";
 import PageShell from "../components/PageShell.jsx";
 import PageMeta from "../components/PageMeta.jsx";
 import { 
@@ -33,7 +33,7 @@ export default function EventDetail() {
     const load = async () => {
       try {
         const res = await api.get(`/events/${id}`);
-        setEvent(res.data);
+        setEvent(res?.data && typeof res.data === "object" ? res.data : null);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Event not found.");
       }
@@ -51,7 +51,18 @@ export default function EventDetail() {
     }
   };
 
-  const hasCoords = event?.locationLat && event?.locationLng;
+  const lat = Number(event?.locationLat);
+  const lng = Number(event?.locationLng);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  const user = getUserFromToken() || getUser();
+  const userId = user?.id || user?._id;
+  const userRole = user?.role;
+  const eventHours = Number(event?.hours) || 0;
+  const eventTags = Array.isArray(event?.tags)
+    ? event.tags
+    : Array.isArray(event?.skills)
+      ? event.skills
+      : ["Community Impact"];
 
   return (
     <PageShell>
@@ -73,6 +84,11 @@ export default function EventDetail() {
             {/* Mission Criticals */}
             <div className="space-y-10">
               <header>
+                <div className="mb-6">
+                  <Link className="nepal-button-secondary h-10 px-4 text-xs btn-back" to="/events" aria-label="Go Back">
+                    Back to events
+                  </Link>
+                </div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-brandRed/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-brandRed mb-6 border border-brandRed/10">
                   <span className="h-2 w-2 rounded-full bg-brandRed" />
                   Live Opportunity
@@ -103,7 +119,7 @@ export default function EventDetail() {
                 </div>
                 <div className="nepal-card p-6 border-slate-100 bg-slate-50/30">
                   <p className="text-[10px] uppercase font-bold tracking-widest text-muted">Mission Duration</p>
-                  <p className="mt-2 text-sm font-bold text-ink">{event.hours} Hours</p>
+                  <p className="mt-2 text-sm font-bold text-ink">{eventHours} Hours</p>
                 </div>
                 <div className="nepal-card p-6 border-slate-100 bg-slate-50/30">
                   <p className="text-[10px] uppercase font-bold tracking-widest text-muted">Strategic Partner</p>
@@ -128,9 +144,9 @@ export default function EventDetail() {
                     </a>
                   </div>
                   <div className="h-80 w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm z-0">
-                    <MapContainer center={[event.locationLat, event.locationLng]} zoom={15} className="h-full w-full">
+                    <MapContainer center={[lat, lng]} zoom={15} className="h-full w-full">
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <Marker position={[event.locationLat, event.locationLng]}>
+                      <Marker position={[lat, lng]}>
                         <Popup>{event.title}</Popup>
                       </Marker>
                     </MapContainer>
@@ -141,7 +157,7 @@ export default function EventDetail() {
               <div>
                 <h3 className="text-lg font-bold text-ink mb-4">Required Capabilities</h3>
                 <div className="flex flex-wrap gap-2">
-                  {(event.tags || event.skills || ["Community Impact"]).map((tag) => (
+                  {eventTags.map((tag) => (
                     <span
                       key={tag}
                       className="rounded-xl border border-brandRed/20 bg-brandRed/5 px-4 py-2 text-xs font-bold text-brandRed"
@@ -163,9 +179,10 @@ export default function EventDetail() {
                 
                 <div className="mt-8 space-y-4">
                   {(() => {
-                    const user = getUser();
-                    const isVolunteer = user?.role === "volunteer";
-                    const hasJoined = event.volunteers?.some(v => (v.user?._id || v.user) === user?.id);
+                    const isVolunteer = userRole === "volunteer";
+                    const hasJoined = (Array.isArray(event?.volunteers) ? event.volunteers : []).some(
+                      (v) => (v?.user?._id || v?.user) === userId
+                    );
 
                     if (!hasToken()) {
                       return (
@@ -186,7 +203,7 @@ export default function EventDetail() {
                           <p className="mt-2 text-xs text-emerald-800/70">Your application has been logged. Stand by for coordinator instructions.</p>
                         </div>
                       ) : (
-                        <button onClick={handleJoin} className="nepal-button w-full h-12 text-base shadow-lift">
+                        <button onClick={handleJoin} className="nepal-button w-full h-12 text-base shadow-lift btn-submit" aria-label="Submit join request">
                           Confirm Join Request
                         </button>
                       );
@@ -206,7 +223,7 @@ export default function EventDetail() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Strategic Value</p>
                 <div className="mt-6 flex items-center justify-between">
                   <div>
-                    <p className="text-3xl font-bold">{event.hours * 10}</p>
+                    <p className="text-3xl font-bold">{eventHours * 10}</p>
                     <p className="text-[10px] uppercase font-bold text-white/50">Point Yield</p>
                   </div>
                   <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">

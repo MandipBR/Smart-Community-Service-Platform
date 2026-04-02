@@ -1,5 +1,10 @@
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
+import Event from "../models/Event.js";
+import VolunteerLog from "../models/VolunteerLog.js";
+import Notification from "../models/Notification.js";
+import Review from "../models/Review.js";
+import Attendance from "../models/Attendance.js";
 import multer from "multer";
 import path from "path";
 
@@ -116,4 +121,39 @@ export const uploadAvatar = async (req, res) => {
     message: "Avatar uploaded successfully",
     avatar: avatarUrl,
   });
+};
+
+export const deleteMe = async (req, res) => {
+  const userId = req.user._id;
+
+  if (req.user.role === "organization") {
+    const orgEvents = await Event.find({ organization: userId }).select("_id");
+    const eventIds = orgEvents.map((event) => event._id);
+
+    if (eventIds.length) {
+      await VolunteerLog.deleteMany({ event: { $in: eventIds } });
+      await Attendance.deleteMany({ eventId: { $in: eventIds } });
+      await Event.deleteMany({ _id: { $in: eventIds } });
+    }
+
+    await Organization.deleteMany({
+      $or: [{ createdBy: userId }, { _id: req.user.organizationId }].filter(
+        (entry) => Object.values(entry)[0]
+      ),
+    });
+    await Review.deleteMany({ organization: userId });
+  } else {
+    await Event.updateMany(
+      { "volunteers.user": userId },
+      { $pull: { volunteers: { user: userId } } }
+    );
+    await VolunteerLog.deleteMany({ user: userId });
+    await Attendance.deleteMany({ userId });
+    await Review.deleteMany({ volunteer: userId });
+  }
+
+  await Notification.deleteMany({ user: userId });
+  await User.findByIdAndDelete(userId);
+
+  res.json({ message: "Account deleted successfully" });
 };

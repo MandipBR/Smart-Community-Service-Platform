@@ -4,23 +4,23 @@ import { getUser, getUserFromToken } from "../services/api";
 
 const ROLE_LINKS = {
   volunteer: [
-    { to: "/dashboard", labelKey: "nav.overview", icon: "📊" },
-    { to: "/my-events", labelKey: "nav.participation", icon: "📅" },
-    { to: "/recommended-events", labelKey: "nav.interests", icon: "🎯" },
-    { to: "/impact-profile/" + (getUser()?.id || ""), labelKey: "nav.impact", icon: "⚡" },
-    { to: "/leaderboard", labelKey: "nav.leaderboard", icon: "🏆" },
+    { to: "/dashboard", labelKey: "nav.overview", icon: "DB" },
+    { to: "/my-events", labelKey: "nav.participation", icon: "EV" },
+    { to: "/recommended-events", labelKey: "nav.interests", icon: "AI" },
+    { to: "/impact-profile", labelKey: "nav.impact", icon: "IM" },
+    { to: "/leaderboard", labelKey: "nav.leaderboard", icon: "LB" },
   ],
   organization: [
-    { to: "/dashboard", labelKey: "nav.event_studio", icon: "🏗️" },
-    { to: "/org/profile", labelKey: "nav.org_info", icon: "🏢" },
-    { to: "/org/analytics", labelKey: "nav.impact_metrics", icon: "📈" },
+    { to: "/dashboard", labelKey: "nav.event_studio", icon: "ST" },
+    { to: "/org/profile", labelKey: "nav.org_info", icon: "OR" },
+    { to: "/org/analytics", labelKey: "nav.impact_metrics", icon: "AN" },
   ],
   admin: [
-    { to: "/dashboard", labelKey: "nav.approvals", icon: "🛡️" },
-    { to: "/admin/users", labelKey: "nav.user_mgmt", icon: "👥" },
-    { to: "/admin/events", labelKey: "nav.event_oversight", icon: "📁" },
-    { to: "/admin/analytics", labelKey: "nav.global_stats", icon: "🌐" },
-    { to: "/admin/logs", labelKey: "nav.system_logs", icon: "📋" },
+    { to: "/dashboard", labelKey: "nav.approvals", icon: "AP" },
+    { to: "/admin/users", labelKey: "nav.user_mgmt", icon: "US" },
+    { to: "/admin/events", labelKey: "nav.event_oversight", icon: "EV" },
+    { to: "/admin/analytics", labelKey: "nav.global_stats", icon: "ST" },
+    { to: "/admin/logs", labelKey: "nav.system_logs", icon: "LG" },
   ],
 };
 
@@ -33,7 +33,16 @@ export default function Sidebar({ isOpen, onClose }) {
   const { t } = useTranslation();
   const user = getUser() || getUserFromToken();
   const role = user?.role;
-  const links = ROLE_LINKS[role] || [];
+  const volunteerId = user?.id || user?._id;
+  const links = (ROLE_LINKS[role] || []).map((link) => {
+    if (link.to === "/impact-profile") {
+      return {
+        ...link,
+        to: volunteerId ? `/impact-profile/${volunteerId}` : "/dashboard",
+      };
+    }
+    return link;
+  });
 
   return (
     <>
@@ -57,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }) {
           {/* Logo / Title */}
           <div className="mb-8 pl-2 pt-2">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted">
-              {t(`nav.${role || 'member'}`)} {t('nav.workspace')}
+              {t(`nav.${role || "member"}`)} {t("nav.workspace")}
             </h2>
           </div>
 
@@ -90,9 +99,9 @@ export default function Sidebar({ isOpen, onClose }) {
               }}
             >
               <span className="text-lg leading-none" aria-hidden="true">
-                ⚙️
+                ST
               </span>
-              {t('nav.settings')}
+              {t("nav.settings")}
             </NavLink>
           </div>
         </div>

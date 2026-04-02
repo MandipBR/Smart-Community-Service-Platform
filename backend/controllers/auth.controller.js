@@ -334,6 +334,7 @@ export const getMe = async (req, res) => {
     name: req.user.name,
     email: req.user.email,
     role: req.user.role,
+    avatar: req.user.avatar,
     onboardingCompleted: req.user.onboardingCompleted,
     profile: {
       phone: req.user.phone,
@@ -359,7 +360,7 @@ export const getOrgStatus = async (req, res) => {
     "orgApprovalStatus"
   );
   if (!org) {
-    return res.status(404).json({ message: "Organization not found" });
+    return res.json({ orgApprovalStatus: null });
   }
   res.json({ orgApprovalStatus: org.orgApprovalStatus });
 };

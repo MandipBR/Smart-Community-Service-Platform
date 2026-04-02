@@ -30,7 +30,7 @@ export default function VolunteerProfile() {
     const load = async () => {
       try {
         const res = await api.get(`/volunteer/${id}/profile`);
-        setProfile(res.data);
+        setProfile(res?.data && typeof res.data === "object" ? res.data : null);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Volunteer not found.");
       }
@@ -55,6 +55,11 @@ export default function VolunteerProfile() {
           title={profile?.name || "Volunteer profile"}
           subtitle="Public reputation and impact history."
         />
+        <div>
+          <Link className="nepal-button-secondary h-10 px-4 text-xs btn-back" to="/leaderboard" aria-label="Go Back">
+            Back to leaderboard
+          </Link>
+        </div>
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
 
@@ -77,7 +82,7 @@ export default function VolunteerProfile() {
               </div>
               <p className="mt-4 text-sm text-muted">{profile.bio || "No bio yet."}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {(profile.causes || profile.skills || ["Community"]).map((tag) => (
+                {(Array.isArray(profile?.causes) ? profile.causes : Array.isArray(profile?.skills) ? profile.skills : ["Community"]).map((tag) => (
                   <span
                     key={`${profile.id}-${tag}`}
                     className="rounded-full bg-brandRed/10 px-3 py-1 text-xs text-brandRed"
@@ -102,11 +107,11 @@ export default function VolunteerProfile() {
               <h3 className="text-lg font-semibold text-ink">Event history</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {profile.eventsParticipated?.length ? (
-                  profile.eventsParticipated.map((event) => (
+                  profile.eventsParticipated.map((event, idx) => (
                     <EventCard
-                      key={event.id}
+                      key={event?.id || `event-${idx}`}
                       id={event.id}
-                      title={event.title}
+                      title={event?.title || "Event"}
                       location={event.organization || "Organization"}
                       date={event.date ? new Date(event.date).toLocaleDateString() : "Date TBD"}
                       tags={["Completed"]}
@@ -122,14 +127,14 @@ export default function VolunteerProfile() {
               <h3 className="text-lg font-semibold text-ink">Recommended opportunities</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {profile.recommendedEvents?.length ? (
-                  profile.recommendedEvents.map((event) => (
+                  profile.recommendedEvents.map((event, idx) => (
                     <EventCard
-                      key={event._id}
+                      key={event?._id || `rec-${idx}`}
                       id={event._id}
-                      title={event.title}
+                      title={event?.title || "Event"}
                       location={event.location || "Location"}
                       date={event.date ? new Date(event.date).toLocaleDateString() : "Date TBD"}
-                      tags={event.tags || event.skills || ["Community"]}
+                      tags={Array.isArray(event?.tags) ? event.tags : Array.isArray(event?.skills) ? event.skills : ["Community"]}
                       actions={
                         <Link className="nepal-button-secondary" to={`/events/${event._id}`}>
                           View event

@@ -6,7 +6,7 @@ import Sidebar from "./Sidebar.jsx";
 export default function PageShell({
   children,
   links,
-  maxWidth = "max-w-[1280px]",
+  maxWidth = "max-w-[1600px]",
   contentClassName = "",
   unreadCount = 0,
   noFooter = false,

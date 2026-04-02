@@ -8,8 +8,10 @@ import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import ErrorState from "../components/ErrorState.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import BadgePill from "../components/BadgePill.jsx";
+import { useTranslation } from "react-i18next";
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [role, setRole] = useState("all");
   const [query, setQuery] = useState("");
@@ -25,7 +27,7 @@ export default function AdminUsers() {
       setLoading(true);
       try {
         const res = await api.get(`/admin/users?${params.toString()}`);
-        setUsers(res.data.data || []);
+        setUsers(Array.isArray(res?.data?.data) ? res.data.data : []);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Unable to load users.");
       } finally {
@@ -38,26 +40,26 @@ export default function AdminUsers() {
   return (
     <PageShell
       links={[
-        { to: "/admin", label: "Approvals" },
-        { to: "/admin/events", label: "Events" },
-        { to: "/admin/logs", label: "Logs" },
+        { to: "/admin", label: t('nav.approvals') },
+        { to: "/admin/events", label: t('nav.events') },
+        { to: "/admin/logs", label: t('nav.logs') },
       ]}
     >
-      <Hero badge="Admin Users" title="A clearer view of the people using the platform" subtitle="Filter by role, check verification state, and review the quality of your user base." height="min-h-[320px]" />
+      <Hero badge={t('admin.admin_users')} title={t('admin.clearer_view_title')} subtitle={t('admin.clearer_view_desc')} height="min-h-[320px]" />
 
       <section className="nepal-card p-8">
         <SectionHeader
-          eyebrow="User Management"
-          title="Users across volunteers, organizations, and admins"
+          eyebrow={t('admin.user_management')}
+          title={t('admin.users_across_roles')}
           actions={
             <>
               <select className="nepal-input" value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="all">All roles</option>
-                <option value="volunteer">Volunteers</option>
-                <option value="organization">Organizations</option>
-                <option value="admin">Admins</option>
+                <option value="all">{t('admin.all_roles')}</option>
+                <option value="volunteer">{t('nav.volunteer')}</option>
+                <option value="organization">{t('nav.organization')}</option>
+                <option value="admin">{t('nav.admin')}</option>
               </select>
-              <input className="nepal-input min-w-[240px]" placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <input className="nepal-input min-w-[240px]" placeholder={t('admin.search_users')} value={query} onChange={(e) => setQuery(e.target.value)} />
             </>
           }
         />
@@ -79,16 +81,16 @@ export default function AdminUsers() {
                 <BadgePill tone="blue">{user.role}</BadgePill>
               </div>
               <div className="mt-5 flex flex-wrap gap-2">
-                <BadgePill tone={user.isVerified ? "green" : "amber"}>{user.isVerified ? "verified" : "unverified"}</BadgePill>
+                <BadgePill tone={user.isVerified ? "green" : "amber"}>{user.isVerified ? t('admin.verified') : t('admin.unverified')}</BadgePill>
                 {user.role === "organization" ? <BadgePill tone={user.orgApprovalStatus === "approved" ? "green" : user.orgApprovalStatus === "rejected" ? "amber" : "blue"}>{user.orgApprovalStatus}</BadgePill> : null}
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3 text-sm text-muted">
                 <div className="rounded-[14px] bg-white/75 p-3">
-                  <p className="text-xs uppercase tracking-[0.18em]">Points</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.points')}</p>
                   <p className="mt-2 text-base font-semibold text-ink">{user.points || 0}</p>
                 </div>
                 <div className="rounded-[14px] bg-white/75 p-3">
-                  <p className="text-xs uppercase tracking-[0.18em]">Level</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.level')}</p>
                   <p className="mt-2 text-base font-semibold text-ink">{user.level || 1}</p>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +14,7 @@ import api from "../services/api";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import StatCard from "../components/StatCard.jsx";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +27,7 @@ ChartJS.register(
 );
 
 export default function AdminAnalytics() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [eventsSeries, setEventsSeries] = useState({ labels: [], series: [] });
   const [volunteerSeries, setVolunteerSeries] = useState({ labels: [], series: [] });
@@ -53,7 +55,7 @@ export default function AdminAnalytics() {
     labels: eventsSeries.labels,
     datasets: [
       {
-        label: "Events",
+        label: t('admin.events'),
         data: eventsSeries.series,
         borderColor: "#D32F2F",
         backgroundColor: "rgba(211,47,47,0.2)",
@@ -65,7 +67,7 @@ export default function AdminAnalytics() {
     labels: volunteerSeries.labels,
     datasets: [
       {
-        label: "New volunteers",
+        label: t('admin.new_volunteers'),
         data: volunteerSeries.series,
         backgroundColor: "rgba(30,58,138,0.4)",
       },
@@ -77,15 +79,15 @@ export default function AdminAnalytics() {
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/admin", label: "Approvals" },
-            { to: "/dashboard", label: "Dashboard" },
+            { to: "/admin", label: t('nav.approvals') },
+            { to: "/dashboard", label: t('nav.dashboard') },
           ]}
         />
 
         <Hero
-          badge="Admin Analytics"
-          title="Platform insights"
-          subtitle="Track growth, events, and volunteer impact."
+          badge={t('admin.admin_analytics')}
+          title={t('admin.platform_insights')}
+          subtitle={t('admin.track_growth_desc')}
         />
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
@@ -93,21 +95,21 @@ export default function AdminAnalytics() {
         {stats ? (
           <>
             <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Total volunteers" value={stats.totals.volunteers} />
-              <StatCard label="Total organizations" value={stats.totals.organizations} />
-              <StatCard label="Total events" value={stats.totals.events} />
-              <StatCard label="Total hours" value={stats.totals.totalHours} />
+              <StatCard label={t('admin.total_volunteers')} value={stats.totals.volunteers} />
+              <StatCard label={t('admin.total_organizations')} value={stats.totals.organizations} />
+              <StatCard label={t('admin.total_events')} value={stats.totals.events} />
+              <StatCard label={t('admin.total_hours')} value={stats.totals.totalHours} />
             </section>
 
             <section className="grid gap-6 lg:grid-cols-2">
               <div className="nepal-card p-6">
-                <h3 className="text-lg font-semibold text-ink">Events per month</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('admin.events_per_month')}</h3>
                 <div className="mt-4">
                   <Line data={eventChart} />
                 </div>
               </div>
               <div className="nepal-card p-6">
-                <h3 className="text-lg font-semibold text-ink">Volunteer growth</h3>
+                <h3 className="text-lg font-semibold text-ink">{t('admin.volunteer_growth')}</h3>
                 <div className="mt-4">
                   <Bar data={volunteerChart} />
                 </div>
@@ -115,7 +117,7 @@ export default function AdminAnalytics() {
             </section>
 
             <section className="nepal-card p-6">
-              <h3 className="text-lg font-semibold text-ink">Top causes</h3>
+              <h3 className="text-lg font-semibold text-ink">{t('admin.top_causes')}</h3>
               {stats.topCauses?.length ? (
                 <div className="mt-4 space-y-3">
                   {stats.topCauses.map((cause) => (
@@ -128,7 +130,7 @@ export default function AdminAnalytics() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted">No causes tracked yet.</p>
+                <p className="text-sm text-muted">{t('admin.no_causes')}</p>
               )}
             </section>
           </>

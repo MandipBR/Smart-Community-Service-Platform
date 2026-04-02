@@ -1,50 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import api, { getUser, hasToken } from "../services/api";
+import api, { getUser, getUserFromToken, hasToken } from "../services/api";
 import EventCard from "../components/EventCard.jsx";
 import PageShell from "../components/PageShell.jsx";
 import PageMeta from "../components/PageMeta.jsx";
 
-const sampleEvents = [
-  {
-    id: "sample-1",
-    title: "Riverbank Cleanup",
-    location: "Riverside Park",
-    date: "2026-02-22T09:00:00",
-    hours: 3,
-    organization: "Green City Alliance",
-    tags: ["Environment", "Outdoors"],
-  },
-  {
-    id: "sample-2",
-    title: "Food Pantry Sorting",
-    location: "Downtown Community Hub",
-    date: "2026-02-25T14:00:00",
-    hours: 2,
-    organization: "Hope Pantry",
-    tags: ["Food Security", "Warehouse"],
-  },
-  {
-    id: "sample-3",
-    title: "Neighborhood Tutoring",
-    location: "Westside Learning Center",
-    date: "2026-02-27T16:30:00",
-    hours: 1.5,
-    organization: "Bright Futures",
-    tags: ["Education", "Youth"],
-  },
-];
-
 export default function Events() {
   const { t } = useTranslation();
+  const tokenUser = getUserFromToken();
+  const cachedUser = getUser();
+  const authRole = tokenUser?.role;
+  const authUserId = tokenUser?.id || tokenUser?._id || cachedUser?.id;
   const [events, setEvents] = useState([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("any");
-  const [skills, setSkills] = useState("");
-  const [radiusKm, setRadiusKm] = useState("10");
+  const [skills] = useState("");
+  const [radiusKm] = useState("10");
   const [coords, setCoords] = useState(null);
   const [debounced, setDebounced] = useState({
     query: "",
@@ -99,20 +73,20 @@ export default function Events() {
 
         const qs = params.toString();
         const res = await api.get(`/events${qs ? `?${qs}` : ""}`);
-        setEvents(res.data || []);
+        setEvents(Array.isArray(res.data) ? res.data : []);
         setStatus("ready");
       } catch (err) {
         setStatus("ready");
         setMessage(
           err?.response?.status === 401
-            ? "Sign in to see live event listings."
-            : "Unable to load live events right now."
+            ? t('events.signin_req')
+            : t('events.load_error')
         );
-        setEvents(sampleEvents);
+        setEvents([]);
       }
     };
     load();
-  }, [debounced]);
+  }, [debounced, t]);
 
   const locationOptions = useMemo(() => {
     const map = new Map();
@@ -148,23 +122,25 @@ export default function Events() {
   };
 
   return (
-    <PageShell>
+    <PageShell maxWidth="max-w-[1600px]">
       <PageMeta 
         title={t('events.title')} 
         description={t('events.subtitle')} 
       />
       {/* header */}
-      <section className="nepal-card p-6 sm:p-8">
-        <h1 className="font-heading text-2xl font-semibold text-ink sm:text-3xl">
-          {t('events.title')}
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          {t('events.subtitle')}
-        </p>
+      <section className="nepal-card p-8 md:p-12 mb-10">
+        <div className="max-w-[800px] mb-8">
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl leading-[1.1]">
+            {t('events.title')}
+          </h1>
+          <p className="mt-4 text-lg text-muted/90 font-medium">
+            {t('events.subtitle')}
+          </p>
+        </div>
 
         {/* filters */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="nepal-field lg:col-span-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+          <div className="nepal-field sm:col-span-2 lg:col-span-2">
             <label htmlFor="ev-search" className="nepal-label">{t('events.search')}</label>
             <input
               id="ev-search"
@@ -201,56 +177,44 @@ export default function Events() {
               <option value="past">{t('events.past_events')}</option>
             </select>
           </div>
-          <div className="nepal-field">
-            <label htmlFor="ev-skills" className="nepal-label">{t('events.skills')}</label>
-            <input id="ev-skills" className="nepal-input" placeholder="Comma-separated" value={skills} onChange={(e) => setSkills(e.target.value)} />
-          </div>
           <div className="flex items-end gap-2">
-            <button className="nepal-button-secondary h-11" onClick={requestLocation} type="button">
+            <button className="nepal-button-secondary w-full h-11 text-xs font-bold shadow-sm" onClick={requestLocation} type="button">
               📍 {t('events.my_location')}
             </button>
-            <div className="nepal-field flex-1">
-              <label htmlFor="ev-radius" className="nepal-label">{t('events.radius')}</label>
-              <select id="ev-radius" className="nepal-input" value={radiusKm} onChange={(e) => setRadiusKm(e.target.value)} disabled={!coords}>
-                <option value="5">5 km</option>
-                <option value="10">10 km</option>
-                <option value="25">25 km</option>
-              </select>
-            </div>
           </div>
         </div>
       </section>
 
       {/* loading skeletons */}
       {status === "loading" && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={`sk-${i}`} className="nepal-card p-6">
-              <div className="skeleton h-4 w-2/3 rounded" />
-              <div className="skeleton mt-3 h-3 w-1/3 rounded" />
-              <div className="skeleton mt-6 h-3 w-full rounded" />
-              <div className="skeleton mt-2 h-3 w-5/6 rounded" />
-              <div className="skeleton mt-6 h-8 w-24 rounded-full" />
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`sk-${i}`} className="nepal-card p-8">
+              <div className="skeleton h-6 w-2/3 rounded-xl mb-4" />
+              <div className="skeleton h-4 w-1/3 rounded-lg mb-8" />
+              <div className="skeleton h-4 w-full rounded-lg mb-2" />
+              <div className="skeleton h-4 w-5/6 rounded-lg mb-8" />
+              <div className="skeleton h-10 w-28 rounded-2xl" />
             </div>
           ))}
         </div>
       )}
 
       {message && (
-        <div className="nepal-card border-amber-200 bg-amber-50 p-4 text-sm text-amber-700" role="status">
+        <div className="nepal-card border-amber-200 bg-amber-50 p-6 text-[15px] font-bold text-amber-700 mb-10 animate-fadeUp" role="status">
           {message}
         </div>
       )}
 
-      {/* event grid */}
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="Event listings">
+      {/* mission grid */}
+      <section className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Mission listings">
         {events.map((event) => (
           <EventCard
             key={event._id || event.id}
             id={event._id || event.id}
             title={event.title}
             location={event.location || "Location TBD"}
-            date={event.date ? new Date(event.date).toLocaleString() : "Date TBD"}
+            date={event.date ? new Date(event.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : "Date TBD"}
             tags={
               event.tags && event.skills
                 ? Array.from(new Set([...event.tags, ...event.skills]))
@@ -265,29 +229,30 @@ export default function Events() {
             volunteerCount={event.volunteers?.length}
             actions={
               <div className="flex items-center gap-2">
-                <Link className="nepal-button-secondary h-9 px-4 text-[11px]" to={`/events/${event._id || event.id}`}>
+                <Link className="nepal-button-secondary h-10 px-5 text-xs font-bold" to={`/events/${event._id || event.id}`}>
                   {t('events.view_details')}
                 </Link>
                 {(() => {
-                  const user = getUser();
-                  const isVolunteer = user?.role === "volunteer";
-                  const hasJoined = event.volunteers?.some(v => (v.user?._id || v.user) === user?.id);
+                  const isVolunteer = authRole === "volunteer";
+                  const hasJoined = event.volunteers?.some(
+                    (v) => (v.user?._id || v.user) === authUserId
+                  );
 
                   if (!hasToken()) {
                     return (
-                      <Link className="nepal-button h-9 px-4 text-[11px]" to="/login">
-                        Sign In
+                      <Link className="nepal-button h-10 px-5 text-xs font-bold" to="/login">
+                        {t('auth.signin')}
                       </Link>
                     );
                   }
                   if (isVolunteer) {
                     return hasJoined ? (
-                      <button className="nepal-button-secondary h-9 px-4 text-[11px] opacity-50 cursor-not-allowed" disabled>
+                      <button className="nepal-button-secondary h-10 px-5 text-xs font-bold opacity-50 cursor-not-allowed" disabled>
                         {t('events.joined')}
                       </button>
                     ) : (
                       <button 
-                        className="nepal-button h-9 px-4 text-[11px]" 
+                        className="nepal-button h-10 px-5 text-xs font-bold" 
                         onClick={async (e) => {
                           e.preventDefault();
                           try {
@@ -312,11 +277,14 @@ export default function Events() {
       </section>
 
       {status === "ready" && events.length === 0 && (
-        <div className="nepal-card flex flex-col items-center gap-4 p-10 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-2xl">
+        <div className="nepal-card flex flex-col items-center gap-6 p-20 text-center animate-fadeUp">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 text-4xl shadow-inner">
             🔍
           </div>
-          <p className="text-sm text-muted">No events match these filters. Try adjusting your criteria.</p>
+          <div className="max-w-[420px]">
+            <h3 className="text-xl font-bold text-ink mb-2">No missions found</h3>
+            <p className="text-md text-muted leading-relaxed">{t('events.no_events')}</p>
+          </div>
         </div>
       )}
     </PageShell>

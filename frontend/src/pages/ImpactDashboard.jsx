@@ -14,6 +14,7 @@ import api from "../services/api";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import StatCard from "../components/StatCard.jsx";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +27,7 @@ ChartJS.register(
 );
 
 export default function ImpactDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [message, setMessage] = useState("");
 
@@ -33,7 +35,7 @@ export default function ImpactDashboard() {
     const load = async () => {
       try {
         const res = await api.get("/impact/stats");
-        setStats(res.data);
+        setStats(res?.data && typeof res.data === "object" ? res.data : null);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Unable to load impact stats.");
       }
@@ -51,12 +53,17 @@ export default function ImpactDashboard() {
     );
   }
 
+  const eventsPerMonth = stats?.eventsPerMonth || {};
+  const volunteerGrowth = stats?.volunteerGrowth || {};
+  const hoursByCause = Array.isArray(stats?.hoursByCause) ? stats.hoursByCause : [];
+  const totals = stats?.totals || {};
+
   const eventsChart = {
-    labels: stats.eventsPerMonth.labels,
+    labels: Array.isArray(eventsPerMonth.labels) ? eventsPerMonth.labels : [],
     datasets: [
       {
-        label: "Events",
-        data: stats.eventsPerMonth.series,
+        label: t("admin.events"),
+        data: Array.isArray(eventsPerMonth.series) ? eventsPerMonth.series : [],
         borderColor: "#D32F2F",
         backgroundColor: "rgba(211,47,47,0.2)",
       },
@@ -64,22 +71,22 @@ export default function ImpactDashboard() {
   };
 
   const volunteerChart = {
-    labels: stats.volunteerGrowth.labels,
+    labels: Array.isArray(volunteerGrowth.labels) ? volunteerGrowth.labels : [],
     datasets: [
       {
-        label: "Volunteer growth",
-        data: stats.volunteerGrowth.series,
+        label: t("admin.volunteer_growth"),
+        data: Array.isArray(volunteerGrowth.series) ? volunteerGrowth.series : [],
         backgroundColor: "rgba(30,58,138,0.35)",
       },
     ],
   };
 
   const hoursChart = {
-    labels: stats.hoursByCause.map((item) => item.cause),
+    labels: hoursByCause.map((item) => item?.cause || "Unknown"),
     datasets: [
       {
         label: "Hours by cause",
-        data: stats.hoursByCause.map((item) => item.hours),
+        data: hoursByCause.map((item) => Number(item?.hours) || 0),
         backgroundColor: "rgba(242, 174, 61, 0.5)",
       },
     ],
@@ -90,34 +97,34 @@ export default function ImpactDashboard() {
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/events", label: "Events" },
-            { to: "/leaderboard", label: "Leaderboard" },
-            { to: "/map", label: "Map" },
+            { to: "/events", label: t("nav.events") },
+            { to: "/leaderboard", label: t("nav.leaderboard") },
+            { to: "/map", label: t("nav.map") },
           ]}
         />
 
         <Hero
-          badge="Impact Dashboard"
-          title="Community impact analytics"
-          subtitle="Visualize platform-wide impact and growth."
+          badge={t("map.title")}
+          title={t("org.impact_summary")}
+          subtitle={t("admin.track_growth_desc")}
         />
 
         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total volunteers" value={stats.totals.volunteers} />
-          <StatCard label="Total events" value={stats.totals.events} />
-          <StatCard label="Total hours served" value={stats.totals.totalHours} />
-          <StatCard label="Communities helped" value={stats.totals.communitiesHelped} />
+          <StatCard label={t("admin.total_volunteers")} value={Number(totals.volunteers) || 0} />
+          <StatCard label={t("admin.total_events")} value={Number(totals.events) || 0} />
+          <StatCard label={t("admin.total_hours")} value={Number(totals.totalHours) || 0} />
+          <StatCard label={t("admin.top_causes")} value={Number(totals.communitiesHelped) || 0} />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="nepal-card p-6">
-            <h3 className="text-lg font-semibold text-ink">Volunteer growth</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("admin.volunteer_growth")}</h3>
             <div className="mt-4">
               <Bar data={volunteerChart} />
             </div>
           </div>
           <div className="nepal-card p-6">
-            <h3 className="text-lg font-semibold text-ink">Events per month</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("admin.events_per_month")}</h3>
             <div className="mt-4">
               <Line data={eventsChart} />
             </div>
@@ -125,7 +132,7 @@ export default function ImpactDashboard() {
         </section>
 
         <section className="nepal-card p-6">
-          <h3 className="text-lg font-semibold text-ink">Hours by cause</h3>
+          <h3 className="text-lg font-semibold text-ink">{t("admin.top_causes")}</h3>
           <div className="mt-4">
             <Bar data={hoursChart} />
           </div>

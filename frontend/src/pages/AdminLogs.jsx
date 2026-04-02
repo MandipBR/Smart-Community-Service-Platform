@@ -14,7 +14,7 @@ export default function AdminLogs() {
     const load = async () => {
       try {
         const res = await api.get(`/admin/logs?page=${page}&limit=10`);
-        setLogs(res.data.data || []);
+        setLogs(Array.isArray(res?.data?.data) ? res.data.data : []);
         setTotal(res.data.total || 0);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Unable to load admin logs.");

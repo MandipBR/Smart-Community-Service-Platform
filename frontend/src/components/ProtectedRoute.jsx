@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import {
   clearAuth,
@@ -10,22 +10,19 @@ import {
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
+  const token = getToken();
+  const expired = !token || isTokenExpired(token);
+  const user = expired ? null : getUserFromToken();
+  const role = user?.role;
 
   useEffect(() => {
-    console.log("User accessed:", location.pathname);
-
-    const token = getToken();
-    if (!token || isTokenExpired(token)) {
+    if (!token || expired) {
       clearAuth();
-      setLoading(false);
       return undefined;
     }
 
-    const decoded = getUserFromToken();
-    const expiryTime = decoded?.exp ? decoded.exp * 1000 : 0;
+    const expiryTime = user?.exp ? user.exp * 1000 : 0;
     const remainingTime = expiryTime - Date.now();
-    setLoading(false);
 
     if (remainingTime <= 0) {
       clearAuth();
@@ -38,24 +35,12 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     }, remainingTime);
 
     return () => window.clearTimeout(timer);
-  }, [location.pathname]);
+  }, [expired, location.pathname, token, user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Checking access...</div>
-      </div>
-    );
-  }
-
-  const token = getToken();
-  if (!hasToken() || !token || isTokenExpired(token)) {
+  if (!hasToken() || expired) {
     clearAuth();
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
-  const user = getUserFromToken();
-  const role = user?.role;
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     return (

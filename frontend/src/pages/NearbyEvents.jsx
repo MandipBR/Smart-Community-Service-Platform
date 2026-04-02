@@ -7,14 +7,13 @@ import EventCard from "../components/EventCard.jsx";
 
 export default function NearbyEvents() {
   const [events, setEvents] = useState([]);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() =>
+    navigator.geolocation ? "" : "Geolocation is not supported in this browser."
+  );
   const [coords, setCoords] = useState(null);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setMessage("Geolocation is not supported in this browser.");
-      return;
-    }
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => setMessage("Unable to access your location.")
@@ -28,7 +27,7 @@ export default function NearbyEvents() {
         const res = await api.get("/events/nearby", {
           params: { lat: coords.lat, lng: coords.lng },
         });
-        setEvents(res.data || []);
+        setEvents(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Unable to load nearby events.");
       }
@@ -63,7 +62,7 @@ export default function NearbyEvents() {
               title={event.title}
               location={event.location || "Location TBD"}
               date={event.date ? new Date(event.date).toLocaleString() : "Date TBD"}
-              badge={`${event.distanceKm.toFixed(1)} km`}
+              badge={typeof event.distanceKm === "number" ? `${event.distanceKm.toFixed(1)} km` : undefined}
               tags={event.tags || event.skills || ["Community"]}
               actions={
                 <Link className="nepal-button-secondary" to={`/events/${event._id}`}>

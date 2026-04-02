@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api, { getUser, hasToken } from "../services/api";
+import { useTranslation } from "react-i18next";
 import PageShell from "../components/PageShell.jsx";
 import PageMeta from "../components/PageMeta.jsx";
 import StatCard from "../components/StatCard.jsx";
@@ -40,13 +41,8 @@ const recommendedVolunteers = (hours, difficulty = 1) => {
   return Math.max(1, Math.ceil((hours * difficulty) / averageCapacity));
 };
 
-const coverageStatus = (required, current) => {
-  if (current >= required) return "Full";
-  if (current >= required * 0.7) return "Almost Full";
-  return "Needs Volunteers";
-};
-
 export default function OrgDashboard() {
+  const { t } = useTranslation();
   const currentUser = getUser();
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState({
@@ -87,7 +83,7 @@ export default function OrgDashboard() {
     const loadData = async () => {
       try {
         const res = await api.get("/events");
-        setEvents(res.data || []);
+        setEvents(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Sync failed.");
       } finally {
@@ -107,7 +103,7 @@ export default function OrgDashboard() {
       }
       try {
         const res = await api.get(`/attendance/event/${attendanceEventId}`);
-        setAttendanceList(res.data.volunteers || []);
+        setAttendanceList(Array.isArray(res?.data?.volunteers) ? res.data.volunteers : []);
       } catch (err) {
         setAttendanceMessage(err?.response?.data?.message || "Attendance sync failed.");
       }
@@ -151,7 +147,7 @@ export default function OrgDashboard() {
         tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
         skills: form.skills ? form.skills.split(",").map(s => s.trim()).filter(Boolean) : [],
       });
-      setMessage("Event published successfully.");
+      setMessage("Successfully published.");
       setForm({
         title: "",
         description: "",
@@ -165,7 +161,7 @@ export default function OrgDashboard() {
         skills: "",
       });
       const res = await api.get("/events");
-      setEvents(res.data || []);
+      setEvents(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setMessage(err?.response?.data?.message || "Publication failed.");
     }
@@ -173,196 +169,214 @@ export default function OrgDashboard() {
 
   if (loading) {
     return (
-      <PageShell withSidebar maxWidth="max-w-[1200px]">
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brandRed border-t-transparent" />
+      <PageShell withSidebar maxWidth="max-w-[1600px]">
+        <div className="flex items-center justify-center py-40">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-brandBlue border-t-transparent" />
         </div>
       </PageShell>
     );
   }
 
   return (
-    <PageShell withSidebar maxWidth="max-w-[1200px]">
+    <PageShell withSidebar maxWidth="max-w-[1600px]">
       <PageMeta 
-        title="Partner Dashboard" 
-        description="Publish community events, verify volunteer hours, and manage your organization's social impact." 
+        title={t('org.workspace_title')} 
+        description={t('org.workspace_subtitle')} 
       />
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Partner Workspace</h1>
-          <p className="mt-1 text-sm text-muted">Manage your opportunities and verify community impact.</p>
+      
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-12">
+        <div className="max-w-[720px]">
+          <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl leading-[1.1]">{t('org.dashboard_greeting_hi', { name: currentUser?.name || 'Partner' })}</h1>
+          <p className="mt-4 text-lg text-muted font-medium">{t('org.dashboard_greeting_sub')}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link to="/org/profile" className="nepal-button text-xs h-10 px-6">Organization Profile</Link>
-          <div className="rounded-full bg-brandBlue/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-brandBlue border border-brandBlue/20">
-            Authenticated Partner
+        <div className="flex items-center gap-4">
+          <Link to="/org/profile" className="nepal-button text-sm h-12 px-8 shadow-lift">{t('org.quick_org_profile')}</Link>
+          <div className="rounded-2xl bg-brandBlue/10 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.2em] text-brandBlue border border-brandBlue/20">
+            {currentUser?.orgApprovalStatus === 'approved' ? t('admin.status_approved') : t('admin.status_pending')}
           </div>
         </div>
       </header>
 
       {orgStatus && orgStatus !== "approved" && (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-6 py-4 text-sm font-bold text-amber-800 animate-fadeUp">
-          ⚠️ Your organization is pending manual verification. Event publishing is restricted to internal draft mode.
+        <div className="rounded-[28px] border border-amber-100 bg-amber-50 px-8 py-6 text-[15px] font-bold text-amber-900 animate-fadeUp mb-12 flex items-center gap-4">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-lg">⚠️</span>
+          <p className="leading-relaxed">
+            {t('org.pending_verification_warning')}
+          </p>
         </div>
       )}
 
-      {/* High-level stats */}
-      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active Events" value={ownEvents.length} icon="📅" trend="+0" helper="Live & upcoming" />
-        <StatCard label="Total Volunteers" value={ownEvents.reduce((acc, ev) => acc + (ev.volunteers?.length || 0), 0)} icon="👥" trend="+12" helper="Across all time" />
-        <StatCard label="Impact Level" value="Level 2" icon="🏗️" helper="Organization Tier" />
-        <StatCard label="Reputation" value="98%" icon="⭐️" helper="Volunteer Feedback" />
+      {/* High-level analytics grid */}
+      <section className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-12">
+        <StatCard label={t('nav.events')} value={ownEvents.length} icon="📅" trend="+0" helper={t('org.events_hosted')} />
+        <StatCard label={t('org.volunteers_served')} value={ownEvents.reduce((acc, ev) => acc + (ev.volunteers?.length || 0), 0)} icon="👥" trend="+12" helper={t('dashboard.missions_desc')} />
+        <StatCard label={t('dashboard.impact_level')} value="Level 2" icon="🏗️" helper={t('org.impact_summary')} />
+        <StatCard label={t('org.trust_signals')} value="98%" icon="⭐️" helper={t('org.trust_signals')} />
       </section>
 
       {message && (
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-6 py-4 text-sm font-bold text-emerald-700 animate-fadeUp">
+        <div className="rounded-[28px] border border-emerald-100 bg-emerald-50/50 px-8 py-5 text-[15px] font-bold text-emerald-700 animate-fadeUp mb-12 shadow-sm">
           {message}
         </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_420px]">
-        {/* Event Studio */}
-        <div className="space-y-10">
-          <section className="nepal-card p-10">
-            <h2 className="text-xl font-bold text-ink mb-6">Event Studio</h2>
-            <form onSubmit={handleCreateEvent} className="grid gap-6">
-              <div className="nepal-field">
-                <label className="nepal-label">Event Headline</label>
-                <input 
-                  className="nepal-input" 
-                  placeholder="e.g. Kathmandu Heritage Cleanup 2024"
-                  value={form.title}
-                  onChange={e => setForm({...form, title: e.target.value})}
-                  required
-                />
+      <div className="grid gap-12 lg:grid-cols-[1fr_420px]">
+        
+        {/* Left Column: Studio & Verification */}
+        <div className="space-y-12">
+          
+          {/* Mission Studio Complex Form */}
+          <section className="nepal-card p-10 relative overflow-hidden group">
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brandBlue/5 blur-3xl transition-transform group-hover:scale-125" />
+            
+            <div className="relative z-10">
+              <div className="mb-10">
+                <p className="eyebrow Onboarding mb-4">{t('org.creation')}</p>
+                <h2 className="text-2xl font-bold text-ink">{t('org.event_studio')}</h2>
               </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
+              
+              <form onSubmit={handleCreateEvent} className="grid gap-8">
                 <div className="nepal-field">
-                  <label className="nepal-label">Date & Time</label>
+                  <label className="nepal-label">{t('org.headline')}</label>
                   <input 
-                    type="datetime-local" 
-                    className="nepal-input"
-                    value={form.date}
-                    onChange={e => setForm({...form, date: e.target.value})}
+                    className="nepal-input h-14" 
+                    placeholder={t('org.placeholder_title')}
+                    value={form.title}
+                    onChange={e => setForm({...form, title: e.target.value})}
                     required
                   />
                 </div>
-                <div className="nepal-field">
-                  <label className="nepal-label">Location Name</label>
-                  <input 
-                    className="nepal-input" 
-                    placeholder="e.g. Patan Durbar Square"
-                    value={form.location}
-                    onChange={e => setForm({...form, location: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
 
-              {/* Geo-Spatial Intelligence Picker */}
-              <div className="nepal-field">
-                <label className="nepal-label">Geospatial Mission Site (Click Map to Pins)</label>
-                <div className="h-64 w-full rounded-2xl overflow-hidden border border-slate-100 shadow-inner z-0">
-                  <MapContainer center={[27.7172, 85.3240]} zoom={13} className="h-full w-full">
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapPicker 
-                      position={form.locationLat && form.locationLng ? { lat: form.locationLat, lng: form.locationLng } : null}
-                      setPosition={(latlng) => setForm({ ...form, locationLat: latlng.lat, locationLng: latlng.lng })}
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('events.date_range')}</label>
+                    <input 
+                      type="datetime-local" 
+                      className="nepal-input h-14 font-bold"
+                      value={form.date}
+                      onChange={e => setForm({...form, date: e.target.value})}
+                      required
                     />
-                  </MapContainer>
-                </div>
-                <div className="mt-4 grid gap-4 grid-cols-2">
-                  <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-[10px] font-bold text-muted uppercase">Latitude</p>
-                    <p className="text-xs font-bold text-ink">{form.locationLat || "Click map..."}</p>
                   </div>
-                  <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-[10px] font-bold text-muted uppercase">Longitude</p>
-                    <p className="text-xs font-bold text-ink">{form.locationLng || "Click map..."}</p>
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('events.location')}</label>
+                    <input 
+                      className="nepal-input h-14" 
+                      placeholder={t('org.placeholder_location')}
+                      value={form.location}
+                      onChange={e => setForm({...form, location: e.target.value})}
+                      required
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+                {/* Geo-Spatial Pinning Layer */}
                 <div className="nepal-field">
-                  <label className="nepal-label">Budgeted Hours</label>
-                  <input 
-                    type="number" 
-                    className="nepal-input" 
-                    value={form.hours}
-                    onChange={e => setForm({...form, hours: e.target.value})}
-                    required
+                  <label className="nepal-label">{t('nav.map')} ({t('map.live_activity')})</label>
+                  <div className="h-72 w-full rounded-[28px] overflow-hidden border border-slate-100 shadow-inner z-0 group/map">
+                    <MapContainer center={[27.7172, 85.3240]} zoom={13} className="h-full w-full">
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <MapPicker 
+                        position={form.locationLat && form.locationLng ? { lat: form.locationLat, lng: form.locationLng } : null}
+                        setPosition={(latlng) => setForm({ ...form, locationLat: latlng.lat, locationLng: latlng.lng })}
+                      />
+                    </MapContainer>
+                    <div className="absolute top-4 left-4 z-[1000] rounded-xl bg-white/90 backdrop-blur px-3 py-1.5 text-[10px] font-bold text-ink uppercase tracking-widest border border-slate-100">
+                      {t('org.pin_active')}
+                    </div>
+                  </div>
+                  <div className="mt-6 grid gap-6 grid-cols-2">
+                    <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100 flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-widest">{t('org.lat')}</p>
+                      <p className="text-sm font-bold text-ink">{form.locationLat ? Number(form.locationLat).toFixed(4) : "..."}</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100 flex items-center justify-between">
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-widest">{t('org.lng')}</p>
+                      <p className="text-sm font-bold text-ink">{form.locationLng ? Number(form.locationLng).toFixed(4) : "..."}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('org.budgeted_hours')}</label>
+                    <input 
+                      type="number" 
+                      className="nepal-input h-14 font-bold" 
+                      value={form.hours}
+                      onChange={e => setForm({...form, hours: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('org.complexity')}</label>
+                    <select 
+                      className="nepal-input h-14 font-bold"
+                      value={form.difficultyFactor}
+                      onChange={e => setForm({...form, difficultyFactor: e.target.value})}
+                    >
+                      <option value={1}>{t('org.standard_act')}</option>
+                      <option value={1.5}>{t('org.med_complexity')}</option>
+                      <option value={2}>{t('org.high_intensity')}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="nepal-field">
+                  <label className="nepal-label">{t('org.narrative')}</label>
+                  <textarea 
+                    className="nepal-input min-h-[160px] pt-6 leading-relaxed"
+                    placeholder={t('org.placeholder_narrative')}
+                    value={form.description}
+                    onChange={e => setForm({...form, description: e.target.value})}
                   />
                 </div>
-                <div className="nepal-field">
-                  <label className="nepal-label">Complexity Factor</label>
-                  <select 
-                    className="nepal-input"
-                    value={form.difficultyFactor}
-                    onChange={e => setForm({...form, difficultyFactor: e.target.value})}
-                  >
-                    <option value={1}>Standard Activity</option>
-                    <option value={1.5}>Medium Complexity</option>
-                    <option value={2}>Specialized / High Intensity</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="nepal-field">
-                <label className="nepal-label">Strategic Narrative (Description)</label>
-                <textarea 
-                  className="nepal-input min-h-[140px] pt-4"
-                  placeholder="Explain the mission and what volunteers will be doing..."
-                  value={form.description}
-                  onChange={e => setForm({...form, description: e.target.value})}
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="nepal-field">
-                  <label className="nepal-label">Thematic Tags</label>
-                  <input 
-                    className="nepal-input" 
-                    placeholder="Environment, Heritage, Youth"
-                    value={form.tags}
-                    onChange={e => setForm({...form, tags: e.target.value})}
-                  />
+                <div className="grid gap-8 md:grid-cols-2">
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('org.tags')}</label>
+                    <input 
+                      className="nepal-input h-14" 
+                      placeholder={t('org.placeholder_tags')}
+                      value={form.tags}
+                      onChange={e => setForm({...form, tags: e.target.value})}
+                    />
+                  </div>
+                  <div className="nepal-field">
+                    <label className="nepal-label">{t('events.skills')}</label>
+                    <input 
+                      className="nepal-input h-14" 
+                      placeholder={t('org.placeholder_skills')}
+                      value={form.skills}
+                      onChange={e => setForm({...form, skills: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div className="nepal-field">
-                  <label className="nepal-label">Skills Required</label>
-                  <input 
-                    className="nepal-input" 
-                    placeholder="Photography, First Aid"
-                    value={form.skills}
-                    onChange={e => setForm({...form, skills: e.target.value})}
-                  />
-                </div>
-              </div>
 
-              <button 
-                type="submit" 
-                className="nepal-button mt-4 w-full h-12 text-base font-bold shadow-lift"
-                disabled={orgStatus !== "approved"}
-              >
-                Publish Strategic Opportunity
-              </button>
-            </form>
+                <button 
+                  type="submit" 
+                  className="nepal-button mt-6 w-full h-14 text-base font-bold shadow-lift tracking-tight"
+                  disabled={orgStatus !== "approved"}
+                >
+                  {t('org.publish_event')}
+                </button>
+              </form>
+            </div>
           </section>
 
-          {/* Attendance Management */}
+          {/* Impact Verification Queue */}
           <section className="nepal-card p-10 bg-slate-50/50 border-slate-200">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-10">
               <div>
-                <h3 className="text-xl font-bold text-ink">Impact Verification</h3>
-                <p className="mt-1 text-xs text-muted">Verify volunteer attendance to award points.</p>
+                <h3 className="text-2xl font-bold text-ink">{t('org.verification')}</h3>
+                <p className="mt-2 text-md text-muted font-medium">Verify service and award community points.</p>
               </div>
               <select 
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-ink outline-none"
+                className="h-12 rounded-2xl border border-slate-200 bg-white px-6 text-sm font-bold text-ink outline-none"
                 value={attendanceEventId}
                 onChange={e => setAttendanceEventId(e.target.value)}
               >
-                <option value="">Select event to verify...</option>
+                <option value="">{t('org.select_verify')}</option>
                 {ownEvents.map(ev => (
                   <option key={ev._id} value={ev._id}>{ev.title}</option>
                 ))}
@@ -370,119 +384,130 @@ export default function OrgDashboard() {
             </div>
 
             {attendanceMessage && (
-              <div className="mb-6 rounded-xl bg-red-50 p-4 text-xs font-bold text-brandRed">
+              <div className="mb-8 rounded-2xl bg-red-50 p-5 text-sm font-bold text-brandRed flex items-center gap-3">
+                <span className="text-lg">✕</span>
                 {attendanceMessage}
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="grid gap-6">
               {attendanceList.length > 0 ? (
                 attendanceList.map(vol => (
-                  <div key={vol.userId} className="nepal-card p-5 flex items-center justify-between gap-4 border-slate-100">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-brandRed/5 flex items-center justify-center text-sm font-bold text-brandRed">
+                  <div key={vol.userId} className="nepal-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:shadow-lg transition-all border-slate-100">
+                    <div className="flex items-center gap-5">
+                      <div className="h-14 w-14 rounded-2xl bg-brandRed/5 flex items-center justify-center text-xl font-bold text-brandRed border border-brandRed/10">
                         {vol.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-ink">{vol.name}</p>
-                        <p className="text-[10px] uppercase font-bold text-muted">{vol.email}</p>
+                        <p className="text-lg font-bold text-ink">{vol.name}</p>
+                        <p className="text-[11px] uppercase tracking-widest font-bold text-muted/60 mt-1">{vol.email}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
                        <button 
                         onClick={() => handleMarkAttendance(vol.userId, 'present')}
-                        className={`h-9 px-4 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
-                          vol.status === 'present' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-muted hover:text-emerald-600 hover:border-emerald-200'
+                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                          vol.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-muted hover:border-emerald-200 hover:text-emerald-600'
                         }`}
                        >
-                         Present
+                         {t('common.present')}
                        </button>
                        <button 
                         onClick={() => handleMarkAttendance(vol.userId, 'absent')}
-                        className={`h-9 px-4 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
-                          vol.status === 'absent' ? 'bg-brandRed text-white shadow-sm' : 'bg-white border border-slate-200 text-muted hover:text-brandRed hover:border-red-200'
+                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                          vol.status === 'absent' ? 'bg-brandRed text-white' : 'bg-white border border-slate-200 text-muted hover:border-red-200 hover:text-brandRed'
                         }`}
                        >
-                         Absent
+                         {t('common.absent')}
                        </button>
                     </div>
                   </div>
                 ))
               ) : attendanceEventId ? (
-                <div className="py-12 text-center">
-                  <p className="text-sm text-muted">No volunteer applications found for this event.</p>
+                <div className="py-20 text-center bg-white rounded-[28px] border border-slate-100">
+                  <div className="text-5xl mb-6 opacity-10">👥</div>
+                  <p className="text-md text-muted font-bold uppercase tracking-widest">{t('org.no_apps')}</p>
                 </div>
               ) : (
-                <div className="py-12 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-                  <p className="text-xs font-bold text-muted uppercase tracking-widest">Select an event above to start verification</p>
+                <div className="py-24 border-4 border-dashed border-slate-100 rounded-[28px] text-center">
+                   <div className="text-4xl mb-6 opacity-20">📋</div>
+                   <p className="text-xs font-bold text-muted/40 uppercase tracking-[0.3em]">{t('org.select_active_initiative')}</p>
                 </div>
               )}
             </div>
           </section>
         </div>
 
-        {/* Live Opportunities Feed (Right) */}
-        <aside className="space-y-8">
-          <section className="nepal-card p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-ink">Live Feed</h3>
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        {/* Right Column: Fleet Monitor & Intelligence */}
+        <aside className="space-y-10">
+          
+          {/* Live Partner Feed */}
+          <section className="nepal-card p-10 relative overflow-hidden group">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brandBlue to-brandRed" />
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="text-xl font-bold text-ink">{t('org.live_feed')}</h3>
+              <div className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
               {ownEvents.map(event => {
                 const required = recommendedVolunteers(event.hours || 1, event.difficultyFactor || 1);
                 const current = event.volunteers?.length || 0;
-                const status = coverageStatus(required, current);
                 
                 return (
-                  <div key={event._id} className="group relative rounded-2xl border border-slate-100 p-5 transition-all hover:bg-slate-50">
-                    <div className="flex justify-between gap-3">
-                      <h4 className="text-sm font-bold text-ink line-clamp-1">{event.title}</h4>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                        status === 'Full' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                  <div key={event._id} className="group relative rounded-[22px] border border-slate-50 p-6 transition-all hover:bg-slate-50 shadow-soft">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <h4 className="text-[15px] font-bold text-ink leading-tight line-clamp-2">{event.title}</h4>
+                      <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-xl ${
+                        current >= required ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
                       }`}>
-                        {status}
+                        {current >= required ? t('org.optimal') : t('org.staffing_needed')}
                       </span>
                     </div>
-                    <p className="mt-2 text-[11px] font-medium text-muted">
-                      📍 {event.location || 'Location TBD'}
-                    </p>
                     
-                    {/* Progress Bar */}
-                    <div className="mt-4">
-                      <div className="flex justify-between text-[10px] font-bold text-muted uppercase tracking-wider mb-2">
-                        <span>Staffing</span>
-                        <span>{current} / {required}</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all duration-1000 ${current >= required ? 'bg-emerald-500' : 'bg-brandRed'}`}
-                          style={{ width: `${Math.min(100, (current / required) * 100)}%` }}
-                        />
-                      </div>
+                    {/* Capacity Visualization */}
+                    <div className="flex justify-between text-[10px] font-bold text-muted uppercase tracking-widest mb-3 px-1">
+                      <span>{t('org.staffing')}</span>
+                      <span>{current} / {required} {t('org.engagee')}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                      <div 
+                        className={`h-full transition-all duration-[1.5s] ease-out shadow-sm ${current >= required ? 'bg-emerald-500 shadow-emerald-200' : 'bg-brandRed shadow-brandRed/20'}`}
+                        style={{ width: `${Math.min(100, (current / required) * 100)}%` }}
+                      />
                     </div>
                   </div>
                 );
               })}
 
               {ownEvents.length === 0 && (
-                <div className="py-10 text-center">
-                  <p className="text-xs text-muted">No active initiatives found.</p>
+                <div className="py-16 text-center">
+                  <div className="text-4xl mb-4 opacity-10">🌍</div>
+                  <p className="text-xs font-bold text-muted/50 uppercase tracking-widest">{t('org.no_events')}</p>
                 </div>
               )}
             </div>
           </section>
 
-          <section className="nepal-card p-10 bg-gradient-to-br from-brandBlue to-brandRed border-0 text-white">
-            <h3 className="text-lg font-bold">Deep Analytics</h3>
-            <p className="mt-1 text-xs text-white/80 leading-relaxed">
-              Measure the social return on your organization's community initiatives.
+          {/* Strategic Analytics Hook */}
+          <section className="nepal-card p-10 bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0 shadow-2xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-hero-glow opacity-10 transition-opacity group-hover:opacity-20" />
+            <h3 className="text-xl font-bold leading-tight">{t('dashboard.impact_analytics')}</h3>
+            <p className="mt-4 text-[15px] text-slate-400 leading-relaxed font-medium">
+              {t('org.impact_summary')}
             </p>
-            <Link to="/org/analytics" className="mt-8 flex h-11 w-full items-center justify-center rounded-xl bg-white/20 backdrop-blur text-xs font-bold uppercase tracking-wider hover:bg-white/30 transition-all">
-              Launch Analytics Hub
-            </Link>
+            <div className="mt-10 pt-10 border-t border-white/10">
+              <Link 
+                to="/org/analytics" 
+                className="flex h-14 w-full items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-sm font-bold uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all duration-500"
+              >
+                {t('org.launch_intelligence')}
+              </Link>
+            </div>
           </section>
         </aside>
       </div>

@@ -8,8 +8,10 @@ import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import ErrorState from "../components/ErrorState.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import BadgePill from "../components/BadgePill.jsx";
+import { useTranslation } from "react-i18next";
 
 export default function AdminEvents() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -18,7 +20,7 @@ export default function AdminEvents() {
     const load = async () => {
       try {
         const res = await api.get("/admin/events");
-        setEvents(res.data.data || []);
+        setEvents(Array.isArray(res?.data?.data) ? res.data.data : []);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Unable to load moderated events.");
       } finally {
@@ -31,15 +33,15 @@ export default function AdminEvents() {
   return (
     <PageShell
       links={[
-        { to: "/admin", label: "Approvals" },
-        { to: "/admin/users", label: "Users" },
-        { to: "/admin/analytics", label: "Analytics" },
+        { to: "/admin", label: t('nav.approvals') },
+        { to: "/admin/users", label: t('nav.users') },
+        { to: "/admin/analytics", label: t('nav.analytics') },
       ]}
     >
-      <Hero badge="Admin Events" title="Monitor event quality and participation at a glance" subtitle="A moderation-ready overview of events, hosting organizations, and engagement status." height="min-h-[320px]" />
+      <Hero badge={t('admin.admin_events')} title={t('admin.monitor_events_title')} subtitle={t('admin.monitor_events_desc')} height="min-h-[320px]" />
 
       <section className="nepal-card p-8">
-        <SectionHeader eyebrow="Event Moderation" title="Recent events across the platform" subtitle="This page is read-only by design, giving admins a clean operational overview without disturbing existing workflows." />
+        <SectionHeader eyebrow={t('admin.event_moderation')} title={t('admin.recent_events_title')} subtitle={t('admin.recent_events_desc')} />
       </section>
 
       {loading ? <div className="grid gap-6 md:grid-cols-2"><LoadingSkeleton className="h-[180px] w-full" count={4} /></div> : null}
@@ -59,24 +61,24 @@ export default function AdminEvents() {
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-muted">
                 <div className="rounded-[14px] bg-white/75 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em]">Date</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.date')}</p>
                   <p className="mt-2 text-sm font-medium text-ink">{new Date(event.date).toLocaleDateString()}</p>
                 </div>
                 <div className="rounded-[14px] bg-white/75 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em]">Location</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.location')}</p>
                   <p className="mt-2 text-sm font-medium text-ink">{event.location || "TBD"}</p>
                 </div>
                 <div className="rounded-[14px] bg-white/75 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em]">Volunteers</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.total_volunteers')}</p>
                   <p className="mt-2 text-sm font-medium text-ink">{event.volunteerCount}</p>
                 </div>
                 <div className="rounded-[14px] bg-white/75 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em]">Hours generated</p>
+                  <p className="text-xs uppercase tracking-[0.18em]">{t('admin.total_hours')}</p>
                   <p className="mt-2 text-sm font-medium text-ink">{event.hoursGenerated}</p>
                 </div>
               </div>
               <div className="mt-5">
-                <Link className="nepal-button-secondary" to={`/events/${event.id}`}>View event</Link>
+                <Link className="nepal-button-secondary" to={`/events/${event.id}`}>{t('nav.events')}</Link>
               </div>
             </div>
           ))}

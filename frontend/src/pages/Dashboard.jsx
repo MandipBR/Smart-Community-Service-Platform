@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api, { clearAuth, getUser, hasToken, setAuth } from "../services/api";
+import { useTranslation } from "react-i18next";
+import api, { clearAuth, getToken, getUser, getUserFromToken, hasToken, setAuth } from "../services/api";
 import VolunteerDashboard from "./VolunteerDashboard.jsx";
 import OrgDashboard from "./OrgDashboard.jsx";
 import AdminDashboard from "./AdminDashboard.jsx";
 import PageShell from "../components/PageShell.jsx";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [user, setUser] = useState(getUser());
+  const authUser = getUserFromToken();
+  const [user, setUser] = useState(() => getUser() || authUser);
   const [loading, setLoading] = useState(true);
-  const [authToken, setAuthToken] = useState(localStorage.getItem("token"));
+  const [authToken, setAuthToken] = useState(getToken());
   const [unread, setUnread] = useState(0);
   const hasLoaded = useRef(false);
 
@@ -25,12 +28,15 @@ export default function Dashboard() {
       }
       try {
         const [meRes, notifRes] = await Promise.all([
-          api.get("/auth/me"),
+          api.get("/users/me"),
           api.get("/notifications").catch(() => ({ data: { data: [] } })),
         ]);
+        const notifications = Array.isArray(notifRes?.data?.data)
+          ? notifRes.data.data
+          : [];
         setUser(meRes.data);
         setAuth(authToken, meRes.data);
-        setUnread((notifRes.data.data || []).filter((n) => !n.isRead).length);
+        setUnread(notifications.filter((n) => !n?.isRead).length);
         if (!meRes.data.onboardingCompleted) {
           navigate("/onboarding");
         }
@@ -55,31 +61,30 @@ export default function Dashboard() {
     navigate("/login", { replace: true });
   };
 
-  /* build quick-action links based on role */
   const quickLinks = [];
   if (user?.role === "volunteer") {
     quickLinks.push(
-      { to: `/volunteer/${user.id}`, label: "Public profile", primary: true },
-      { to: `/impact-profile/${user.id}`, label: "Impact profile" },
-      { to: "/recommended-events", label: "AI matches" },
+      { to: `/volunteer/${user.id}`, label: t('nav.public_profile'), primary: true },
+      { to: `/impact-profile/${user.id}`, label: t('nav.impact_profile') },
+      { to: "/recommended-events", label: t('nav.ai_matches') },
     );
   }
   if (user?.role === "organization") {
     quickLinks.push(
-      { to: "/org/profile", label: "Org profile" },
-      { to: "/org/analytics", label: "Analytics" },
+      { to: "/org/profile", label: t('nav.org_profile') },
+      { to: "/org/analytics", label: t('nav.analytics') },
     );
   }
   if (user?.role === "admin") {
     quickLinks.push(
-      { to: "/admin", label: "Approvals" },
-      { to: "/admin/analytics", label: "Analytics" },
+      { to: "/admin", label: t('nav.approvals') },
+      { to: "/admin/analytics", label: t('nav.analytics') },
     );
   }
   quickLinks.push(
-    { to: "/nearby-events", label: "Nearby" },
-    { to: "/impact", label: "Impact" },
-    { to: "/map", label: "Map" },
+    { to: "/nearby-events", label: t('nav.nearby') },
+    { to: "/impact", label: t('nav.impact') },
+    { to: "/map", label: t('nav.map') },
   );
 
   return (
@@ -93,28 +98,28 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-                {user?.name ? `Hi, ${user.name}` : "Welcome back"} 👋
+                {user?.name ? t('dashboard.greeting_hi_name', { name: user.name }) : t('dashboard.welcome')}
               </h1>
               <p className="mt-1 text-sm text-muted">
-                You&rsquo;re in the {user?.role || "member"} workspace. Here&rsquo;s your overview.
+                {t('dashboard.workspace_overview', { role: t(`nav.${user?.role || "member"}`) })}
               </p>
             </div>
             <button
               onClick={logout}
               className="nepal-button-ghost text-sm text-muted hover:text-brandRed"
             >
-              Sign out
+              {t('nav.signout')}
             </button>
           </div>
 
           {/* role badge + onboarding status */}
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-brandBlue/10 bg-brandBlue/[0.08] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brandBlue">
-              {user?.role || "member"}
+              {t(`nav.${user?.role || "member"}`)}
             </span>
             {user?.onboardingCompleted && (
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                Profile complete
+                {t('dashboard.profile_complete')}
               </span>
             )}
           </div>

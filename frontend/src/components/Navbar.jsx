@@ -93,8 +93,9 @@ export default function Navbar({ links: overrideLinks, unreadCount = 0, onMenuCl
   const tokenUser = getUserFromToken();
   const cachedUser = getUser();
   const isLoggedIn = hasToken();
-  const role = tokenUser?.role || cachedUser?.role;
+  const role = tokenUser?.role;
   const userName = cachedUser?.name || tokenUser?.name || "User";
+  const authUserId = tokenUser?.id || tokenUser?._id;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -234,14 +235,14 @@ export default function Navbar({ links: overrideLinks, unreadCount = 0, onMenuCl
                         <p className="text-xs text-muted capitalize">{t(`nav.${role || 'member'}`)}</p>
                       </div>
                       {role === "volunteer" && (
-                        <>
+                        <div className="flex flex-col">
                           <Link to="/profile" className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
                             {t('nav.profile_hub')}
                           </Link>
-                          <Link to={`/impact-profile/${tokenUser?.id || cachedUser?.id}`} className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
+                          <Link to={`/impact-profile/${authUserId || cachedUser?.id}`} className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
                             {t('nav.impact_profile')}
                           </Link>
-                        </>
+                        </div>
                       )}
                       {role === "organization" && (
                         <Link to="/org/profile" className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>

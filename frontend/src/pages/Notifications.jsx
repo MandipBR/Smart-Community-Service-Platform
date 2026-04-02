@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 
 const formatType = (type) =>
-  type
+  (typeof type === "string" ? type : "notification")
     .split("_")
     .map((word) => word[0] + word.slice(1).toLowerCase())
     .join(" ");
@@ -38,7 +38,7 @@ export default function Notifications() {
     }
     try {
       const res = await api.get("/notifications");
-      setItems(res.data.data || []);
+      setItems(Array.isArray(res?.data?.data) ? res.data.data : []);
     } catch (err) {
       const status = err?.response?.status;
       if (status === 401) {

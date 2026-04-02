@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api, { getUser, getUserFromToken, setAuth } from "../services/api";
+import api, { getToken, getUser, getUserFromToken, setAuth } from "../services/api";
 import PageShell from "../components/PageShell.jsx";
 import PageMeta from "../components/PageMeta.jsx";
 import AvatarUpload from "../components/AvatarUpload.jsx";
@@ -16,17 +16,20 @@ export default function ProfileHub() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const joinedYear = user?.createdAt
+    ? new Date(user.createdAt).getFullYear()
+    : null;
 
   useEffect(() => {
     const load = async () => {
       try {
         const [meRes, profileRes, statsRes] = await Promise.all([
-          api.get("/auth/me"),
+          api.get("/users/me"),
           api.get(`/volunteer/${userId}/profile`),
           api.get("/volunteer/stats"),
         ]);
         setUser(meRes.data);
-        setAuth(localStorage.getItem("token"), meRes.data);
+        setAuth(getToken(), meRes.data);
         setProfile(profileRes.data);
         setStats(statsRes.data);
       } catch (err) {
@@ -41,7 +44,7 @@ export default function ProfileHub() {
   const handleAvatarSuccess = (url) => {
     const updated = { ...user, avatar: url };
     setUser(updated);
-    setAuth(localStorage.getItem("token"), updated);
+    setAuth(getToken(), updated);
   };
 
   if (loading) {
@@ -60,6 +63,11 @@ export default function ProfileHub() {
         title="Profile Hub" 
         description="Manage your volunteer profile, track your service history, and showcase your community impact." 
       />
+      {error ? (
+        <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-brandRed">
+          {error}
+        </div>
+      ) : null}
       {/* Header section with Avatar */}
       <section className="nepal-card relative overflow-hidden p-8 sm:p-10">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brandRed/5 blur-3xl opacity-50" aria-hidden="true" />
@@ -80,7 +88,7 @@ export default function ProfileHub() {
               </span>
             </div>
             <p className="mt-2 text-sm font-medium text-muted">
-              Volunteer Community Member • Joined {new Date(user?.createdAt).getFullYear()}
+              Volunteer Community Member • Joined {joinedYear || "—"}
             </p>
             <p className="mt-4 max-w-xl text-sm leading-7 text-muted/90">
               {profile?.bio || "Building a visible record of community service and social impact. Start participating to grow your service story."}

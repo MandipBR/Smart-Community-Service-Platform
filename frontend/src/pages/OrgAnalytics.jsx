@@ -35,7 +35,8 @@ export default function OrgAnalytics() {
     const load = async () => {
       try {
         const res = await api.get("/events");
-        const ownEvents = (res.data || []).filter((event) => {
+        const allEvents = Array.isArray(res.data) ? res.data : [];
+        const ownEvents = allEvents.filter((event) => {
           const owner = event.organization?._id || event.organization;
           return owner === orgId;
         });

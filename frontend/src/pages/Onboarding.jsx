@@ -1,146 +1,144 @@
-﻿import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { getUser, setAuth } from "../services/api";
-import Hero from "../components/Hero.jsx";
+import api, { getUser, getUserFromToken } from "../services/api";
+import { useTranslation } from "react-i18next";
+import PageShell from "../components/PageShell.jsx";
+import PageMeta from "../components/PageMeta.jsx";
 
 export default function Onboarding() {
-  const navigate = useNavigate();
-  const storedUser = getUser();
-  const [user, setUser] = useState(storedUser);
-  const [form, setForm] = useState({
+  const { t } = useTranslation();
+  const [data, setData] = useState({
     phone: "",
-    bio: "",
     location: "",
-    organizationName: "",
-    causes: "",
-    skills: "",
+    bio: "",
     availability: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.get("/auth/me");
-        setUser(res.data);
-        setAuth(localStorage.getItem("token"), res.data);
-        setForm({
-          phone: res.data.profile?.phone || "",
-          bio: res.data.profile?.bio || "",
-          location: res.data.profile?.location || "",
-          organizationName: res.data.profile?.organizationName || "",
-          causes: (res.data.profile?.causes || []).join(", "),
-          skills: (res.data.profile?.skills || []).join(", "),
-          availability: res.data.profile?.availability || "",
-        });
-        if (res.data.onboardingCompleted) {
-          navigate("/dashboard");
-        }
-      } catch {
-        navigate("/login");
-      }
-    };
-    load();
-  }, [navigate]);
+  const tokenUser = getUserFromToken();
+  const cachedUser = getUser() || {};
+  const isOrg = (tokenUser?.role || cachedUser.role) === "organization";
 
-  const submit = async (event) => {
-    event.preventDefault();
-    setMessage("");
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
     try {
-      await api.post("/auth/onboarding", {
-        ...form,
-        causes: form.causes
-          ? form.causes.split(",").map((c) => c.trim()).filter(Boolean)
-          : [],
-        skills: form.skills
-          ? form.skills.split(",").map((s) => s.trim()).filter(Boolean)
-          : [],
-      });
-      setMessage("Profile completed. Redirecting...");
-      setTimeout(() => navigate("/dashboard"), 800);
+      await api.post("/auth/onboarding", data);
+      setMessage(t('onboarding.redirecting'));
+      setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
-      setMessage(err?.response?.data?.message || "Unable to save profile.");
+      setError(err?.response?.data?.message || "Failed to update profile.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="nepal-page">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
-        <Hero
-          badge="Onboarding"
-          title="Complete your profile"
-          subtitle="Help us match you with the right opportunities and teams."
-        />
+    <PageShell maxWidth="max-w-[1600px]">
+      <PageMeta 
+        title={t('onboarding.complete_profile')} 
+        description={t('onboarding.match_subtitle')} 
+      />
+      
+      <div className="mx-auto max-w-[1200px] flex flex-col items-center justify-center min-h-[80vh] py-20 animate-fadeUp">
+        <div className="w-full max-w-[640px] space-y-12">
+          
+          <header className="text-center">
+             <div className="inline-flex items-center gap-2 rounded-full bg-brandRed/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-brandRed mb-6">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brandRed opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brandRed"></span>
+                </span>
+                {isOrg ? t('onboarding.org_title') : t('onboarding.volunteer_title')}
+             </div>
+             <h1 className="font-heading text-4xl sm:text-5xl font-bold tracking-tight text-ink leading-tight">
+                {t('onboarding.complete_profile')}
+             </h1>
+             <p className="mt-4 text-lg text-muted font-medium max-w-md mx-auto">
+                {t('onboarding.match_subtitle')}
+             </p>
+          </header>
 
-        <section className="nepal-card p-8">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-2xl font-semibold">
-              {user?.role === "organization"
-                ? "Organization onboarding"
-                : "Volunteer onboarding"}
-            </h2>
-            <span className="rounded-full bg-brandBlue/10 px-3 py-1 text-xs text-brandBlue">
-              Step 1 of 1
-            </span>
-          </div>
-          <form className="mt-6 grid gap-4" onSubmit={submit}>
-            {user?.role === "organization" ? (
-              <input
-                className="nepal-input"
-                placeholder="Organization name"
-                value={form.organizationName}
-                onChange={(e) =>
-                  setForm({ ...form, organizationName: e.target.value })
-                }
-                required
-              />
-            ) : null}
-            <input
-              className="nepal-input"
-              placeholder="Phone"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-            <input
-              className="nepal-input"
-              placeholder="Location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
-            <textarea
-              className="nepal-input min-h-[120px]"
-              rows="3"
-              placeholder="Short bio"
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            />
-            <input
-              className="nepal-input"
-              placeholder="Causes (comma-separated)"
-              value={form.causes}
-              onChange={(e) => setForm({ ...form, causes: e.target.value })}
-            />
-            <input
-              className="nepal-input"
-              placeholder="Skills (comma-separated)"
-              value={form.skills}
-              onChange={(e) => setForm({ ...form, skills: e.target.value })}
-            />
-            <input
-              className="nepal-input"
-              placeholder="Availability"
-              value={form.availability}
-              onChange={(e) =>
-                setForm({ ...form, availability: e.target.value })
-              }
-            />
-            {message ? <div className="text-sm text-brandRed">{message}</div> : null}
-            <button className="nepal-button" type="submit">
-              Save profile
-            </button>
+          <form className="nepal-card p-10 sm:p-16 space-y-10 relative overflow-hidden group" onSubmit={submit}>
+            {/* Design accents */}
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brandRed/5 blur-3xl transition-transform group-hover:scale-125" />
+            
+            <div className="relative z-10 space-y-10">
+              {message && (
+                <div className="rounded-2xl bg-emerald-50 border border-emerald-100 px-8 py-5 text-[15px] font-bold text-emerald-700 animate-fadeUp flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {message}
+                </div>
+              )}
+              {error && (
+                <div className="rounded-2xl bg-red-50 border border-red-100 px-8 py-5 text-[15px] font-bold text-brandRed animate-fadeUp">
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
+                <div className="nepal-field">
+                  <label className="nepal-label">{t('onboarding.phone')}</label>
+                  <input
+                    className="nepal-input h-14"
+                    placeholder={t('onboarding.phone_placeholder')}
+                    value={data.phone}
+                    onChange={(e) => setData({ ...data, phone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="nepal-field">
+                  <label className="nepal-label">{t('onboarding.location')}</label>
+                  <input
+                    className="nepal-input h-14"
+                    placeholder={t('onboarding.location_placeholder')}
+                    value={data.location}
+                    onChange={(e) => setData({ ...data, location: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="nepal-field">
+                <label className="nepal-label">{t('onboarding.bio')}</label>
+                <textarea
+                  className="nepal-input min-h-[160px] py-6 resize-none leading-relaxed"
+                  placeholder={isOrg ? t('onboarding.bio_placeholder_org') : t('onboarding.bio_placeholder_vol')}
+                  value={data.bio}
+                  onChange={(e) => setData({ ...data, bio: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="nepal-field">
+                <label className="nepal-label">{t('onboarding.availability')}</label>
+                <input
+                  className="nepal-input h-14"
+                  placeholder={t('onboarding.availability_placeholder')}
+                  value={data.availability}
+                  onChange={(e) => setData({ ...data, availability: e.target.value })}
+                  required={!isOrg}
+                />
+              </div>
+
+              <div className="pt-6 flex flex-col items-center gap-8">
+                <button className="nepal-button w-full h-16 shadow-lift text-lg tracking-tight" type="submit" disabled={loading}>
+                  {loading ? t('common.loading') : t('onboarding.save_profile')}
+                </button>
+                <div className="flex items-center gap-4">
+                   <div className="h-1 w-12 rounded-full bg-brandRed" />
+                   <p className="text-xs font-bold text-muted/40 uppercase tracking-[0.3em]">{t('onboarding.step_count')}</p>
+                   <div className="h-1 w-12 rounded-full bg-slate-100" />
+                </div>
+              </div>
+            </div>
           </form>
-        </section>
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

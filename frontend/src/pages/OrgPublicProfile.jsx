@@ -12,15 +12,7 @@ export default function OrgPublicProfile() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("");
-  const isAdmin = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      const user = raw ? JSON.parse(raw) : null;
-      return user?.role === "admin";
-    } catch {
-      return false;
-    }
-  }, []);
+  const isAdmin = useMemo(() => getUser()?.role === "admin", []);
 
   const canReview = useMemo(() => {
     const user = getUser();
@@ -34,11 +26,14 @@ export default function OrgPublicProfile() {
           api.get(`/orgs/${id}`),
           api.get(`/org/${id}/reviews`),
         ]);
+        const safeReviews = Array.isArray(reviewRes?.data?.reviews)
+          ? reviewRes.data.reviews
+          : [];
         setOrg(orgRes.data);
-        setReviews(reviewRes.data.reviews || []);
+        setReviews(safeReviews);
         setReviewStats({
-          averageRating: reviewRes.data.averageRating || 0,
-          count: reviewRes.data.count || 0,
+          averageRating: Number(reviewRes?.data?.averageRating) || 0,
+          count: Number(reviewRes?.data?.count) || 0,
         });
       } catch (err) {
         setMessage(err?.response?.data?.message || "Organization not found.");
@@ -56,10 +51,10 @@ export default function OrgPublicProfile() {
       });
       setComment("");
       const reviewRes = await api.get(`/org/${id}/reviews`);
-      setReviews(reviewRes.data.reviews || []);
+      setReviews(Array.isArray(reviewRes?.data?.reviews) ? reviewRes.data.reviews : []);
       setReviewStats({
-        averageRating: reviewRes.data.averageRating || 0,
-        count: reviewRes.data.count || 0,
+        averageRating: Number(reviewRes?.data?.averageRating) || 0,
+        count: Number(reviewRes?.data?.count) || 0,
       });
       setMessage("Review submitted.");
     } catch (err) {
@@ -118,7 +113,7 @@ export default function OrgPublicProfile() {
                 <div className="rounded-xl bg-white/70 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">Rating</p>
                   <p className="mt-2 text-sm text-ink">
-                    {reviewStats.averageRating.toFixed(1)} / 5 ({reviewStats.count})
+                    {(Number(reviewStats?.averageRating) || 0).toFixed(1)} / 5 ({Number(reviewStats?.count) || 0})
                   </p>
                 </div>
               </div>
@@ -160,7 +155,7 @@ export default function OrgPublicProfile() {
                 <div key={review.id} className="rounded-xl bg-white/70 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-ink">{review.volunteer}</p>
-                    <span className="text-xs text-brandRed">{review.rating}?</span>
+                    <span className="text-xs text-brandRed">{review.rating} stars</span>
                   </div>
                   <p className="mt-2 text-sm text-muted">{review.comment || "No comment"}</p>
                 </div>

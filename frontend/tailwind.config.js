@@ -5,12 +5,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        brandRed: "#D32F2F",
-        brandBlue: "#1E3A8A",
+        brandRed: "rgb(var(--brand-red) / <alpha-value>)",
+        brandBlue: "rgb(var(--brand-blue) / <alpha-value>)",
         warmBg: "var(--bg-warm)",
         cardWarm: "var(--bg-card)",
-        ink: "var(--text-ink)",
-        muted: "var(--text-muted)",
+        ink: "rgb(var(--text-ink) / <alpha-value>)",
+        muted: "rgb(var(--text-muted) / <alpha-value>)",
         surface: "var(--bg-surface)",
       },
       fontFamily: {

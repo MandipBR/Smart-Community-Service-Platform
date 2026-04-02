@@ -1,9 +1,26 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();
 
+const readStorage = (key, fallback = null) => {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // no-op when storage is unavailable
+  }
+};
+
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [theme, setTheme] = useState(() => readStorage("theme", "light"));
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -12,7 +29,7 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove("dark");
     }
-    localStorage.setItem("theme", theme);
+    writeStorage("theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

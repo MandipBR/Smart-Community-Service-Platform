@@ -61,7 +61,7 @@ export default function OrgLogin() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F9FAFB]">
+    <div className="flex min-h-screen bg-surface">
       <PageMeta
         title="Partner Login"
         description="Access your organization workspace to manage community events and volunteers."
@@ -159,13 +159,14 @@ export default function OrgLogin() {
                   type="button"
                   onClick={() => setShowPw(!showPw)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted hover:text-ink transition-colors"
+                  aria-label={showPw ? "Hide password" : "Show password"}
                 >
                   {showPw ? "HIDE" : "SHOW"}
                 </button>
               </div>
             </div>
 
-            <button className="nepal-button w-full mt-2" type="submit" disabled={loading}>
+            <button className="nepal-button w-full mt-2 btn-submit" type="submit" disabled={loading} aria-label="Submit organization sign in">
               {loading ? "Authenticating..." : "Sign In to Workspace"}
             </button>
           </form>

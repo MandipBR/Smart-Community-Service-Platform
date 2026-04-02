@@ -31,7 +31,7 @@ export default function RecommendedEvents() {
         const res = await api.get("/events/recommended", {
           params: coords ? { lat: coords.lat, lng: coords.lng } : {},
         });
-        setEvents(res.data || []);
+        setEvents(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         const status = err?.response?.status;
         if (status === 403) {

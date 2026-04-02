@@ -1,20 +1,38 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 
 const A11yContext = createContext();
 
+const readStorage = (key, fallback = null) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // no-op when storage is unavailable
+  }
+};
+
 export function A11yProvider({ children }) {
   const [highContrast, setHighContrast] = useState(
-    () => localStorage.getItem("a11y_high_contrast") === "true"
+    () => readStorage("a11y_high_contrast") === "true"
   );
   const [reducedMotion, setReducedMotion] = useState(
-    () => localStorage.getItem("a11y_reduced_motion") === "true"
+    () => readStorage("a11y_reduced_motion") === "true"
   );
   const [fontSize, setFontSize] = useState(
-    () => Number(localStorage.getItem("a11y_font_size")) || 100
+    () => Number(readStorage("a11y_font_size")) || 100
   );
 
   useEffect(() => {
-    localStorage.setItem("a11y_high_contrast", highContrast);
+    writeStorage("a11y_high_contrast", highContrast);
     if (highContrast) {
       document.documentElement.classList.add("high-contrast");
     } else {
@@ -23,7 +41,7 @@ export function A11yProvider({ children }) {
   }, [highContrast]);
 
   useEffect(() => {
-    localStorage.setItem("a11y_reduced_motion", reducedMotion);
+    writeStorage("a11y_reduced_motion", reducedMotion);
     if (reducedMotion) {
       document.documentElement.classList.add("reduced-motion");
     } else {
@@ -32,7 +50,7 @@ export function A11yProvider({ children }) {
   }, [reducedMotion]);
 
   useEffect(() => {
-    localStorage.setItem("a11y_font_size", fontSize);
+    writeStorage("a11y_font_size", fontSize);
     document.documentElement.style.fontSize = `${fontSize}%`;
   }, [fontSize]);
 
