@@ -4,23 +4,23 @@ import { getUser, getUserFromToken } from "../services/api";
 
 const ROLE_LINKS = {
   volunteer: [
-    { to: "/dashboard", labelKey: "nav.overview", icon: "DB" },
-    { to: "/my-events", labelKey: "nav.participation", icon: "EV" },
-    { to: "/recommended-events", labelKey: "nav.interests", icon: "AI" },
-    { to: "/impact-profile", labelKey: "nav.impact", icon: "IM" },
-    { to: "/leaderboard", labelKey: "nav.leaderboard", icon: "LB" },
+    { to: "/dashboard", labelKey: "nav.overview", iconKey: "nav.overview_short" },
+    { to: "/my-events", labelKey: "nav.participation", iconKey: "nav.participation_short" },
+    { to: "/recommended-events", labelKey: "nav.interests", iconKey: "nav.ai_matches_short" },
+    { to: "/impact-profile", labelKey: "nav.impact", iconKey: "nav.impact_short" },
+    { to: "/leaderboard", labelKey: "nav.leaderboard", iconKey: "nav.leaderboard_short" },
   ],
   organization: [
-    { to: "/dashboard", labelKey: "nav.event_studio", icon: "ST" },
-    { to: "/org/profile", labelKey: "nav.org_info", icon: "OR" },
-    { to: "/org/analytics", labelKey: "nav.impact_metrics", icon: "AN" },
+    { to: "/dashboard", labelKey: "nav.event_studio", iconKey: "nav.event_studio_short" },
+    { to: "/org/profile", labelKey: "nav.org_info", iconKey: "nav.org_info_short" },
+    { to: "/org/analytics", labelKey: "nav.impact_metrics", iconKey: "nav.impact_metrics_short" },
   ],
   admin: [
-    { to: "/dashboard", labelKey: "nav.approvals", icon: "AP" },
-    { to: "/admin/users", labelKey: "nav.user_mgmt", icon: "US" },
-    { to: "/admin/events", labelKey: "nav.event_oversight", icon: "EV" },
-    { to: "/admin/analytics", labelKey: "nav.global_stats", icon: "ST" },
-    { to: "/admin/logs", labelKey: "nav.system_logs", icon: "LG" },
+    { to: "/dashboard", labelKey: "nav.approvals", iconKey: "nav.approvals_short" },
+    { to: "/admin/users", labelKey: "nav.user_mgmt", iconKey: "nav.user_mgmt_short" },
+    { to: "/admin/events", labelKey: "nav.event_oversight", iconKey: "nav.event_oversight_short" },
+    { to: "/admin/analytics", labelKey: "nav.global_stats", iconKey: "nav.global_stats_short" },
+    { to: "/admin/logs", labelKey: "nav.system_logs", iconKey: "nav.system_logs_short" },
   ],
 };
 
@@ -82,7 +82,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 className={({ isActive }) => (isActive ? linkActive : linkBase)}
               >
                 <span className="text-lg leading-none" aria-hidden="true">
-                  {link.icon}
+                  {link.iconKey ? t(link.iconKey) : link.icon}
                 </span>
                 {link.labelKey ? t(link.labelKey) : link.label}
               </NavLink>
