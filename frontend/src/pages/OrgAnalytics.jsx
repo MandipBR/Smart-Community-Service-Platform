@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -25,6 +26,7 @@ const monthLabel = (value) =>
   new Date(value).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
 
 export default function OrgAnalytics() {
+  const { t } = useTranslation();
   const authUser = getUserFromToken();
   const orgId = authUser?.id || authUser?._id;
   const [events, setEvents] = useState([]);
@@ -42,7 +44,7 @@ export default function OrgAnalytics() {
         });
         setEvents(ownEvents);
       } catch (err) {
-        setMessage(err?.response?.data?.message || "Unable to load organization analytics.");
+        setMessage(err?.response?.data?.message || t("org.analytics_load_error"));
       } finally {
         setLoading(false);
       }
@@ -99,41 +101,41 @@ export default function OrgAnalytics() {
   return (
     <PageShell
       links={[
-        { to: "/dashboard", label: "Dashboard" },
-        { to: "/org/profile", label: "Profile" },
-        { to: "/events", label: "Events" },
+        { to: "/dashboard", label: t("nav.dashboard") },
+        { to: "/org/profile", label: t("nav.profile") },
+        { to: "/events", label: t("nav.events") },
       ]}
     >
       <Hero
-        badge="Organization Analytics"
-        title="A clearer read on participation and momentum"
-        subtitle="Track hosted events, volunteer involvement, and the hours your organization is generating through the platform."
+        badge={t("org.analytics_badge")}
+        title={t("org.analytics_title")}
+        subtitle={t("org.analytics_subtitle")}
         height="min-h-[320px]"
       />
 
       {message ? <ErrorState message={message} /> : null}
-      {!loading && events.length === 0 ? <EmptyState title="No hosted events yet" message="Once your organization starts publishing opportunities, analytics will appear here." /> : null}
+      {!loading && events.length === 0 ? <EmptyState title={t("org.no_hosted_events_title")} message={t("org.no_hosted_events_message")} /> : null}
 
       {events.length > 0 ? (
         <>
           <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <MetricCard label="Total events" value={stats.totalEvents} helper="Hosted opportunities" />
-            <MetricCard label="Volunteers" value={stats.totalVolunteers} helper="Requests across events" />
-            <MetricCard label="Approved" value={stats.approvedVolunteers} helper="Confirmed participants" />
-            <MetricCard label="Impact hours" value={stats.totalImpactHours} helper="Estimated verified hours" />
+            <MetricCard label={t("org.total_events")} value={stats.totalEvents} helper={t("org.hosted_opportunities")} />
+            <MetricCard label={t("org.volunteers")} value={stats.totalVolunteers} helper={t("org.requests_across_events")} />
+            <MetricCard label={t("org.approved") } value={stats.approvedVolunteers} helper={t("org.confirmed_participants")} />
+            <MetricCard label={t("org.impact_hours")} value={stats.totalImpactHours} helper={t("org.estimated_verified_hours")} />
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
-            <AnalyticsChartCard title="Participation per event" subtitle="See which opportunities attracted the most volunteers.">
+            <AnalyticsChartCard title={t("org.participation_per_event")} subtitle={t("org.participation_per_event_subtitle") }>
               <Bar data={participationChart} options={{ maintainAspectRatio: false }} />
             </AnalyticsChartCard>
-            <AnalyticsChartCard title="Monthly hosting trend" subtitle="A month-by-month view of event publishing activity.">
+            <AnalyticsChartCard title={t("org.monthly_hosting_trend")} subtitle={t("org.monthly_hosting_subtitle") }>
               <Line data={monthlyChart} options={{ maintainAspectRatio: false }} />
             </AnalyticsChartCard>
           </section>
 
           <section className="nepal-card p-8">
-            <SectionHeader eyebrow="Top Performing Events" title="Where your organization is creating the most traction" />
+            <SectionHeader eyebrow={t("org.top_performing_events")} title={t("org.top_performing_events_title")} />
             <div className="mt-8 space-y-4">
               {[...events]
                 .sort((a, b) => (b.volunteers?.length || 0) - (a.volunteers?.length || 0))

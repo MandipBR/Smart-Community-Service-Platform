@@ -68,6 +68,8 @@ export default function OrgDashboard() {
   const [notificationHistory, setNotificationHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("attendance"); // attendance, summary, history
   const [loading, setLoading] = useState(true);
+  const [pinFeedback, setPinFeedback] = useState("");
+  const mapRef = useRef(null);
   const hasLoaded = useRef(false);
 
   const ownEvents = useMemo(() => {
@@ -326,7 +328,7 @@ export default function OrgDashboard() {
   }
 
   return (
-    <PageShell withSidebar maxWidth="max-w-[1600px]">
+    <PageShell withSidebar maxWidth="max-w-[1600px]" noFooter>
       <PageMeta 
         title={t('org.workspace_title')} 
         description={t('org.workspace_subtitle')} 
@@ -422,17 +424,37 @@ export default function OrgDashboard() {
                 <div className="nepal-field">
                   <label className="nepal-label">{t('nav.map')} ({t('map.live_activity')})</label>
                   <div className="h-72 w-full rounded-[28px] overflow-hidden border border-slate-100 shadow-inner z-0 group/map">
-                    <MapContainer center={[27.7172, 85.3240]} zoom={13} className="h-full w-full">
+                    <MapContainer center={[27.7172, 85.3240]} zoom={13} className="h-full w-full" whenCreated={(map) => (mapRef.current = map)}>
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       <MapPicker 
                         position={form.locationLat && form.locationLng ? { lat: form.locationLat, lng: form.locationLng } : null}
                         setPosition={(latlng) => setForm({ ...form, locationLat: latlng.lat, locationLng: latlng.lng })}
                       />
                     </MapContainer>
-                    <div className="absolute top-4 left-4 z-[1000] rounded-xl bg-white/90 backdrop-blur px-3 py-1.5 text-[10px] font-bold text-ink uppercase tracking-widest border border-slate-100">
-                      {t('org.pin_active')}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl bg-white/90 backdrop-blur px-3 py-1.5 text-[10px] font-bold text-ink uppercase tracking-widest border border-slate-100 shadow-sm flex items-center gap-2">
+                      <span>{t('org.pin_active')}</span>
+                      <button
+                        type="button"
+                        className="rounded-md bg-brandRed px-2 py-1 text-[10px] font-bold text-white"
+                        onClick={() => {
+                          if (!mapRef.current) return;
+                          const center = mapRef.current.getCenter();
+                          setForm((prev) => ({
+                            ...prev,
+                            locationLat: center.lat,
+                            locationLng: center.lng,
+                          }));
+                          setPinFeedback(t('org.pin_active_set'));
+                          setTimeout(() => setPinFeedback(''), 3000);
+                        }}
+                      >
+                        {t('org.pin_set')}
+                      </button>
                     </div>
                   </div>
+                  {pinFeedback && (
+                    <div className="mt-2 text-xs text-brandGreen font-semibold">{pinFeedback}</div>
+                  )}
                   <div className="mt-6 grid gap-6 grid-cols-2">
                     <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100 flex items-center justify-between">
                       <p className="text-[10px] font-bold text-muted uppercase tracking-widest">{t('org.lat')}</p>

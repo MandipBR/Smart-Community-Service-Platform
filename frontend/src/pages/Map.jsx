@@ -50,11 +50,11 @@ export default function Map() {
         description={t("map.subtitle")} 
       />
       
-      <header className="mb-12 max-w-[800px]">
-        <h1 className="font-heading text-4xl font-bold tracking-tight text-ink sm:text-5xl leading-[1.1]">
+      <header className="mb-10 max-w-[760px]">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-ink sm:text-4xl leading-[1.15]">
           {t("map.title")}
         </h1>
-        <p className="mt-4 text-lg text-muted/90 font-medium">
+        <p className="mt-3 text-base sm:text-lg text-muted/90 font-medium max-w-[720px] leading-relaxed">
           {t("map.subtitle")}
         </p>
       </header>
@@ -81,10 +81,10 @@ export default function Map() {
                
                return (
                  <Marker key={event._id} position={position}>
-                   <Popup className="font-sans">
+                   <Popup className="font-sans max-w-[220px] break-words">
                      <div>
-                       <h3 className="font-bold text-ink">{event.title}</h3>
-                       <p className="text-sm text-muted mt-1">{event.location}</p>
+                       <h3 className="font-bold text-ink break-words">{event.title}</h3>
+                       <p className="text-sm text-muted mt-1 break-words">{event.location}</p>
                        <p className="text-xs text-brandRed font-semibold mt-2">{event.hours} {t("common.reward_pts")}</p>
                      </div>
                    </Popup>

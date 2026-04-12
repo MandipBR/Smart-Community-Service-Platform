@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import Navbar from "../components/Navbar.jsx";
@@ -6,9 +7,10 @@ import Hero from "../components/Hero.jsx";
 import EventCard from "../components/EventCard.jsx";
 
 export default function NearbyEvents() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState(() =>
-    navigator.geolocation ? "" : "Geolocation is not supported in this browser."
+    navigator.geolocation ? "" : t("nearby.geolocation_not_supported")
   );
   const [coords, setCoords] = useState(null);
 
@@ -16,9 +18,9 @@ export default function NearbyEvents() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setMessage("Unable to access your location.")
+      () => setMessage(t("nearby.unable_access_location"))
     );
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const load = async () => {
@@ -40,16 +42,16 @@ export default function NearbyEvents() {
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/events", label: "Events" },
-            { to: "/recommended-events", label: "AI Matches" },
-            { to: "/map", label: "Map" },
+            { to: "/events", label: t("nav.events") },
+            { to: "/recommended-events", label: t("nav.ai_matches") },
+            { to: "/map", label: t("nav.map") },
           ]}
         />
 
         <Hero
-          badge="Nearby Events"
-          title="Closest opportunities"
-          subtitle="Smart volunteer routing based on your current location."
+          badge={t("nearby.badge")}
+          title={t("nearby.title")}
+          subtitle={t("nearby.subtitle")}
         />
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
@@ -60,19 +62,19 @@ export default function NearbyEvents() {
               key={event._id}
               id={event._id}
               title={event.title}
-              location={event.location || "Location TBD"}
-              date={event.date ? new Date(event.date).toLocaleString() : "Date TBD"}
+              location={event.location || t("common.location_tbd")}
+              date={event.date ? new Date(event.date).toLocaleString() : t("common.date_tbd")}
               badge={typeof event.distanceKm === "number" ? `${event.distanceKm.toFixed(1)} km` : undefined}
-              tags={event.tags || event.skills || ["Community"]}
+              tags={event.tags || event.skills || [t("common.location_tbd")]}
               actions={
                 <Link className="nepal-button-secondary" to={`/events/${event._id}`}>
-                  View event
+                  {t("recommended.view_event")}
                 </Link>
               }
             />
           ))}
           {events.length === 0 ? (
-            <p className="text-sm text-muted">No nearby events found.</p>
+            <p className="text-sm text-muted">{t("nearby.no_events")}</p>
           ) : null}
         </section>
       </div>

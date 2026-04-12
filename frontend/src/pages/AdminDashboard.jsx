@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   const totalPages = Math.max(1, Math.ceil(total / 9));
 
   return (
-    <PageShell withSidebar maxWidth="max-w-[1600px]">
+    <PageShell withSidebar maxWidth="max-w-[1600px]" noFooter>
       <PageMeta 
         title={t('admin.oversight_title')} 
         description={t('admin.oversight_subtitle')} 
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
                    <div className="mx-auto h-24 w-24 mb-8 rounded-full bg-slate-50 flex items-center justify-center text-4xl shadow-inner border border-slate-100">
                      🔍
                    </div>
-                   <h3 className="text-xl font-bold text-ink mb-2">No matching partners</h3>
+                   <h3 className="text-xl font-bold text-ink mb-2">{t('admin.no_matching_partners')}</h3>
                    <p className="text-sm font-bold text-muted/40 uppercase tracking-[0.3em]">{t('admin.no_partners')}</p>
                 </div>
               )}

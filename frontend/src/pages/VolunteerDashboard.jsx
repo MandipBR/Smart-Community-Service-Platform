@@ -38,7 +38,7 @@ export default function VolunteerDashboard({ user: propUser }) {
         setEvents(safeEvents);
         setNotifications(safeNotifications.slice(0, 5));
       } catch (err) {
-        setMessage(err?.response?.data?.message || "Failed to sync dashboard.");
+        setMessage(err?.response?.data?.message || t('dashboard.sync_failed'));
       } finally {
         setLoading(false);
       }
@@ -51,10 +51,10 @@ export default function VolunteerDashboard({ user: propUser }) {
   const handleJoin = async (id) => {
     try {
       await api.post(`/events/${id}/join`);
-      setMessage("Application sent successfully.");
+      setMessage(t('dashboard.join_success'));
       setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      setMessage(err?.response?.data?.message || "Join request failed.");
+      setMessage(err?.response?.data?.message || t('dashboard.join_failed'));
     }
   };
 
@@ -66,12 +66,12 @@ export default function VolunteerDashboard({ user: propUser }) {
         eventId: logData.eventId,
         hours: Number(logData.hours),
       });
-      setMessage("Hours logged and pending verification.");
+      setMessage(t('dashboard.log_success'));
       setLogData({ eventId: "", hours: "" });
       const statsRes = await api.get("/volunteer/stats");
       setStats(statsRes.data);
     } catch (err) {
-      setMessage(err?.response?.data?.message || "Logging failed.");
+      setMessage(err?.response?.data?.message || t('dashboard.log_failed'));
     }
   };
 
@@ -86,7 +86,7 @@ export default function VolunteerDashboard({ user: propUser }) {
   }
 
   return (
-    <PageShell maxWidth="max-w-[1600px]">
+    <PageShell maxWidth="max-w-[1600px]" noFooter>
       <PageMeta 
         title={t('dashboard.title')} 
         description={t('dashboard.subtitle')} 
@@ -157,7 +157,7 @@ export default function VolunteerDashboard({ user: propUser }) {
             
             <div className="relative z-10">
               <div className="mb-10">
-                <p className="eyebrow Onboarding mb-4">Operations</p>
+                <p className="eyebrow Onboarding mb-4">{t('dashboard.operations')}</p>
                 <h3 className="text-2xl font-bold text-ink">{t('dashboard.action_center')}</h3>
                 <p className="mt-2 text-md text-muted font-medium">{t('dashboard.action_center_subtitle')}</p>
               </div>
@@ -221,7 +221,7 @@ export default function VolunteerDashboard({ user: propUser }) {
               ))}
               {events.length === 0 && (
                 <div className="col-span-full nepal-card p-16 text-center animate-fadeUp">
-                  <p className="text-lg text-muted font-medium">No active missions currently matching your profile.</p>
+                  <p className="text-lg text-muted font-medium">{t('dashboard.no_active_missions')}</p>
                 </div>
               )}
             </div>

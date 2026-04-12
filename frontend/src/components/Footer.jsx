@@ -1,15 +1,24 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { hasToken } from "../services/api";
 
-const footerLinks = [
+const PUBLIC_FOOTER_LINKS = [
   { to: "/about", labelKey: "nav.about" },
   { to: "/faq", labelKey: "nav.faq" },
   { to: "/contact", labelKey: "nav.contact" },
   { to: "/events", labelKey: "nav.events" },
 ];
 
+const AUTH_FOOTER_LINKS = [
+  { to: "/about", labelKey: "nav.about" },
+  { to: "/faq", labelKey: "nav.faq" },
+  { to: "/contact", labelKey: "nav.contact" },
+];
+
 export default function Footer() {
   const { t } = useTranslation();
+
+  const footerLinks = hasToken() ? AUTH_FOOTER_LINKS : PUBLIC_FOOTER_LINKS;
 
   return (
     <footer className="mt-auto border-t border-slate-200/60 bg-white/60 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/60" role="contentinfo">
@@ -23,17 +32,19 @@ export default function Footer() {
           </p>
         </div>
 
-        <nav className="flex flex-wrap items-center gap-4" aria-label="Footer navigation">
-          {footerLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="text-sm text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brandRed/40 focus-visible:ring-offset-2 rounded dark:hover:text-white"
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
-        </nav>
+        {footerLinks.length > 0 && (
+          <nav className="flex flex-wrap items-center gap-4" aria-label="Footer navigation">
+            {footerLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="text-sm text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brandRed/40 focus-visible:ring-offset-2 rounded dark:hover:text-white"
+              >
+                {t(link.labelKey)}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </footer>
   );

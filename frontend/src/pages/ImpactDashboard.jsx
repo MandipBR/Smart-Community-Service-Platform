@@ -37,17 +37,17 @@ export default function ImpactDashboard() {
         const res = await api.get("/impact/stats");
         setStats(res?.data && typeof res.data === "object" ? res.data : null);
       } catch (err) {
-        setMessage(err?.response?.data?.message || "Unable to load impact stats.");
+        setMessage(err?.response?.data?.message || t('impact.load_error'));
       }
     };
     load();
-  }, []);
+  }, [t]);
 
   if (!stats) {
     return (
       <div className="nepal-page">
         <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-6 px-6 py-10">
-          {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : <p className="text-sm text-muted">Loading impact stats...</p>}
+          {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : <p className="text-sm text-muted">{t('impact.loading')}</p>}
         </div>
       </div>
     );
@@ -82,10 +82,10 @@ export default function ImpactDashboard() {
   };
 
   const hoursChart = {
-    labels: hoursByCause.map((item) => item?.cause || "Unknown"),
+    labels: hoursByCause.map((item) => item?.cause || t('common.unknown')),
     datasets: [
       {
-        label: "Hours by cause",
+        label: t('impact.hours_by_cause'),
         data: hoursByCause.map((item) => Number(item?.hours) || 0),
         backgroundColor: "rgba(242, 174, 61, 0.5)",
       },

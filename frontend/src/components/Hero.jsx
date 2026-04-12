@@ -34,11 +34,11 @@ export default function Hero({ badge, title, subtitle, children, right, height =
               {badge}
             </span>
           ) : null}
-          <h1 className="font-heading text-[48px] font-bold leading-[1.05] tracking-tight md:text-[56px] lg:text-[64px]">
+          <h1 className="font-heading text-[40px] font-bold leading-[1.1] tracking-tight md:text-[48px] lg:text-[56px] xl:text-[64px] break-words max-w-full">
             {title}
           </h1>
           {subtitle ? (
-            <p className="max-w-[520px] text-lg leading-relaxed text-white/85 font-medium">
+            <p className="max-w-[680px] text-base md:text-lg leading-relaxed text-white/85 font-medium break-words">
               {subtitle}
             </p>
           ) : null}
