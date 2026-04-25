@@ -57,6 +57,18 @@ const removeStorage = (key) => {
   }
 };
 
+const redactSensitive = (value) => {
+  if (!value || typeof value !== "object") return value;
+  const sensitive = new Set(["password", "currentPassword", "newPassword", "otp", "credential"]);
+  if (Array.isArray(value)) return value.map((item) => redactSensitive(item));
+  return Object.fromEntries(
+    Object.entries(value).map(([key, val]) => [
+      key,
+      sensitive.has(key) ? "[REDACTED]" : redactSensitive(val),
+    ])
+  );
+};
+
 export const getToken = () => readStorage("token");
 export const hasToken = () => Boolean(getToken());
 export const getUserFromToken = () => {
@@ -98,6 +110,14 @@ api.interceptors.request.use((config) => {
       return Promise.reject(new axios.Cancel("Session expired"));
     }
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (import.meta.env.DEV) {
+    console.log("API Request:", {
+      method: config.method,
+      url: config.url,
+      payload: redactSensitive(config.data),
+      params: config.params,
+    });
   }
   return config;
 });

@@ -7,7 +7,7 @@ import PageMeta from "../components/PageMeta.jsx";
 import StatCard from "../components/StatCard.jsx";
 import EventCard from "../components/EventCard.jsx";
 
-export default function VolunteerDashboard({ user: propUser }) {
+export default function VolunteerDashboard({ user: propUser, embedded = false }) {
   const { t } = useTranslation();
   const tokenUser = getUserFromToken();
   const user = propUser || tokenUser;
@@ -18,6 +18,14 @@ export default function VolunteerDashboard({ user: propUser }) {
   const [message, setMessage] = useState("");
   const [logData, setLogData] = useState({ eventId: "", hours: "" });
   const hasLoaded = useRef(false);
+  const userId = user?.id || user?._id;
+  const eligibleLogEvents = events.filter((event) =>
+    (event.volunteers || []).some(
+      (entry) =>
+        (entry.user?._id || entry.user)?.toString?.() === userId?.toString?.() &&
+        entry.approved
+    )
+  );
 
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -66,7 +74,7 @@ export default function VolunteerDashboard({ user: propUser }) {
         eventId: logData.eventId,
         hours: Number(logData.hours),
       });
-      setMessage("Hours logged and pending verification.");
+      setMessage("Hours logged successfully.");
       setLogData({ eventId: "", hours: "" });
       const statsRes = await api.get("/volunteer/stats");
       setStats(statsRes.data);
@@ -77,7 +85,7 @@ export default function VolunteerDashboard({ user: propUser }) {
 
   if (loading) {
     return (
-      <PageShell maxWidth="max-w-[1600px]">
+      <PageShell maxWidth="max-w-[1600px]" noFooter={embedded} noNavbar={embedded}>
         <div className="flex items-center justify-center py-40">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-brandRed border-t-transparent" />
         </div>
@@ -86,7 +94,7 @@ export default function VolunteerDashboard({ user: propUser }) {
   }
 
   return (
-    <PageShell maxWidth="max-w-[1600px]">
+    <PageShell maxWidth="max-w-[1600px]" noFooter={embedded} noNavbar={embedded}>
       <PageMeta 
         title={t('dashboard.title')} 
         description={t('dashboard.subtitle')} 
@@ -101,7 +109,7 @@ export default function VolunteerDashboard({ user: propUser }) {
           <Link to="/events" className="nepal-button text-sm h-12 px-8 shadow-lift">{t('dashboard.explore_cta')}</Link>
           <Link to="/notifications" className="nepal-button-secondary text-sm h-12 px-6 relative border-slate-200">
             {t('dashboard.notif_cta')}
-            {notifications.some(n => !n.read) && (
+            {notifications.some(n => !n.isRead) && (
               <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-brandRed shadow-sm" />
             )}
           </Link>
@@ -171,7 +179,7 @@ export default function VolunteerDashboard({ user: propUser }) {
                     required
                   >
                     <option value="">{t('dashboard.select_event')}...</option>
-                    {events.map(ev => (
+                    {eligibleLogEvents.map(ev => (
                       <option key={ev._id} value={ev._id}>{ev.title}</option>
                     ))}
                   </select>
@@ -238,7 +246,7 @@ export default function VolunteerDashboard({ user: propUser }) {
                 notifications.map((n, idx) => (
                   <div key={n._id || idx} className="flex gap-5 group items-start">
                     <div className="flex-shrink-0 h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl transition-all group-hover:scale-110 shadow-sm">
-                      {n.type === 'event_reminder' ? '🔔' : '✨'}
+                      {String(n.type || "").toUpperCase() === 'EVENT_REMINDER' ? '🔔' : '✨'}
                     </div>
                     <div className="min-w-0 pt-1">
                       <p className="text-[14px] font-bold text-ink leading-relaxed line-clamp-3 group-hover:text-brandRed transition-colors">{n.message}</p>

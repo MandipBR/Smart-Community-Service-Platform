@@ -12,6 +12,7 @@ export default function Onboarding() {
     location: "",
     bio: "",
     availability: "",
+    organizationName: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +27,11 @@ export default function Onboarding() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    if (isOrg && !data.organizationName.trim()) {
+      setError("Organization name is required.");
+      setLoading(false);
+      return;
+    }
     try {
       await api.post("/auth/onboarding", data);
       setMessage(t('onboarding.redirecting'));
@@ -124,6 +130,21 @@ export default function Onboarding() {
                   required={!isOrg}
                 />
               </div>
+
+              {isOrg && (
+                <div className="nepal-field">
+                  <label className="nepal-label">{t('auth.org_name_label')}</label>
+                  <input
+                    className="nepal-input h-14"
+                    placeholder="Organization name"
+                    value={data.organizationName}
+                    onChange={(e) =>
+                      setData({ ...data, organizationName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              )}
 
               <div className="pt-6 flex flex-col items-center gap-8">
                 <button className="nepal-button w-full h-16 shadow-lift text-lg tracking-tight" type="submit" disabled={loading}>

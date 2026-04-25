@@ -14,6 +14,7 @@ import {
 import { validate } from "../validators/validate.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const isDuplicateKeyError = (err) => err?.code === 11000;
 
 const parseCookies = (cookieHeader = "") => {
   return cookieHeader.split(";").reduce((acc, pair) => {
@@ -79,15 +80,23 @@ export const signup = async (req, res) => {
     role === "organization" && allowOrgSignup ? "organization" : "volunteer";
   const orgApprovalStatus = userRole === "organization" ? "pending" : "approved";
 
-  const createdUser = await User.create({
-    name,
-    email,
-    password: await bcrypt.hash(password, 10),
-    role: userRole,
-    organizationType: organizationType || "",
-    orgApprovalStatus,
-    verificationToken,
-  });
+  let createdUser;
+  try {
+    createdUser = await User.create({
+      name,
+      email,
+      password: await bcrypt.hash(password, 10),
+      role: userRole,
+      organizationType: organizationType || "",
+      orgApprovalStatus,
+      verificationToken,
+    });
+  } catch (err) {
+    if (isDuplicateKeyError(err)) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+    throw err;
+  }
   if (userRole === "organization") {
     await ensureOrganization(createdUser, {
       name,
@@ -288,14 +297,25 @@ export const googleSignIn = async (req, res) => {
 
     let user = await User.findOne({ email });
     if (!user) {
-      user = await User.create({
-        name,
-        email,
-        password: "",
-        role: userRole,
-        orgApprovalStatus,
-        isVerified: true,
-      });
+      try {
+        user = await User.create({
+          name,
+          email,
+          password: "",
+          role: userRole,
+          orgApprovalStatus,
+          isVerified: true,
+        });
+      } catch (err) {
+        if (isDuplicateKeyError(err)) {
+          user = await User.findOne({ email });
+        } else {
+          throw err;
+        }
+      }
+      if (!user) {
+        return res.status(409).json({ message: "Email already exists" });
+      }
       if (userRole === "organization") {
         await ensureOrganization(user, {
           name,

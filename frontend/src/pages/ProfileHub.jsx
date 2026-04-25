@@ -88,7 +88,7 @@ export default function ProfileHub() {
               </span>
             </div>
             <p className="mt-2 text-sm font-medium text-muted">
-              Volunteer Community Member • Joined {joinedYear || "—"}
+              Volunteer Community Member | Joined {joinedYear || "-"}
             </p>
             <p className="mt-4 max-w-xl text-sm leading-7 text-muted/90">
               {profile?.bio || "Building a visible record of community service and social impact. Start participating to grow your service story."}
@@ -139,8 +139,10 @@ export default function ProfileHub() {
                   </div>
                   <div className="pb-6">
                     <h4 className="text-[15px] font-bold text-ink">{event.title}</h4>
-                    <p className="mt-1 text-xs font-medium text-muted">{new Date(event.date).toLocaleDateString()} • {event.organization}</p>
-                    <p className="mt-1 text-xs text-muted/80">{event.hours} hours contributed</p>
+                    <p className="mt-1 text-xs font-medium text-muted">
+                      {new Date(event.date).toLocaleDateString()} | {event.organization}
+                    </p>
+                    <p className="mt-1 text-xs text-muted/80">{Number(event.hours || 0)} hours contributed</p>
                   </div>
                 </div>
               ))
@@ -148,7 +150,7 @@ export default function ProfileHub() {
               <div className="py-10 text-center">
                 <p className="text-sm text-muted">No events in your timeline yet.</p>
                 <Link to="/events" className="mt-3 inline-block text-sm font-bold text-brandRed hover:underline">
-                  Find your first event →
+                  Find your first event
                 </Link>
               </div>
             )}

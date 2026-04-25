@@ -10,4 +10,15 @@ const volunteerLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+volunteerLogSchema.index(
+  { user: 1, event: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      user: { $type: "objectId" },
+      event: { $type: "objectId" },
+    },
+  }
+);
+
 export default mongoose.model("VolunteerLog", volunteerLogSchema);

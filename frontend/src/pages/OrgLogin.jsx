@@ -6,6 +6,8 @@ import PageMeta from "../components/PageMeta.jsx";
 export default function OrgLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState("credentials");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,12 +25,86 @@ export default function OrgLogin() {
     document.cookie = `g_csrf_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secureFlag}`;
   }, []);
 
+  useEffect(() => {
+    if (step !== "credentials") return;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId || !csrfToken) return;
+
+    let attempts = 0;
+    const tryInit = () => {
+      if (!window.google?.accounts?.id) {
+        attempts += 1;
+        if (attempts < 20) setTimeout(tryInit, 150);
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response) => {
+          try {
+            const res = await api.post("/auth/google", {
+              credential: response.credential,
+              csrfToken,
+              role: "organization",
+            });
+            if (res.data.user?.role !== "organization") {
+              setError("This Google account is not configured as an organization.");
+              return;
+            }
+            setAuth(res.data.token, res.data.user);
+            navigate("/dashboard");
+          } catch (err) {
+            setError(
+              err?.response?.data?.message || "Google sign-in failed. Please try again."
+            );
+          }
+        },
+      });
+
+      const mountNode = document.getElementById("googleSignInOrg");
+      if (mountNode) {
+        mountNode.innerHTML = "";
+        window.google.accounts.id.renderButton(mountNode, {
+          theme: "outline",
+          size: "large",
+          width: 380,
+          text: "continue_with",
+        });
+      }
+    };
+
+    tryInit();
+  }, [csrfToken, navigate, step]);
+
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password, csrfToken });
+      if (res.data.step === "otp") {
+        setStep("otp");
+      } else {
+        if (res.data.user?.role !== "organization") {
+          setError("This account is not configured as an organization.");
+          return;
+        }
+        setAuth(res.data.token, res.data.user);
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async (event) => {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await api.post("/auth/verify-otp", { email, otp });
       if (res.data.user?.role !== "organization") {
         setError("This account is not configured as an organization.");
         return;
@@ -36,7 +112,7 @@ export default function OrgLogin() {
       setAuth(res.data.token, res.data.user);
       navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Login failed. Please try again.");
+      setError(err?.response?.data?.message || "OTP verification failed.");
     } finally {
       setLoading(false);
     }
@@ -117,7 +193,16 @@ export default function OrgLogin() {
             </div>
           )}
 
+          {step === "credentials" ? (
           <form className="space-y-4" onSubmit={submit}>
+            <div id="googleSignInOrg" className="flex justify-center" />
+
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+              <span className="h-px flex-1 bg-slate-100" />
+              or
+              <span className="h-px flex-1 bg-slate-100" />
+            </div>
+
             <div className="nepal-field">
               <label htmlFor="login-email" className="nepal-label">Organization Email</label>
               <div className="relative">
@@ -170,6 +255,35 @@ export default function OrgLogin() {
               {loading ? "Authenticating..." : "Sign In to Workspace"}
             </button>
           </form>
+          ) : (
+          <form className="space-y-4" onSubmit={verifyOtp}>
+            <div className="nepal-field">
+              <label htmlFor="org-otp" className="nepal-label">OTP</label>
+              <input
+                id="org-otp"
+                className="nepal-input text-center tracking-[0.5em]"
+                type="text"
+                maxLength={6}
+                placeholder="000000"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                required
+                autoComplete="one-time-code"
+              />
+            </div>
+            <button className="nepal-button w-full mt-2 btn-submit" type="submit" disabled={loading} aria-label="Submit organization OTP">
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+            <button
+              type="button"
+              className="nepal-button-secondary w-full"
+              disabled={loading}
+              onClick={submit}
+            >
+              Resend OTP
+            </button>
+          </form>
+          )}
 
           <div className="border-t border-slate-100 pt-6 text-center">
             <p className="text-sm text-muted">

@@ -6,7 +6,7 @@ import PageShell from "../components/PageShell.jsx";
 import PageMeta from "../components/PageMeta.jsx";
 import StatCard from "../components/StatCard.jsx";
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ embedded = false }) {
   const { t } = useTranslation();
   const [orgs, setOrgs] = useState([]);
   const [message, setMessage] = useState("");
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   const totalPages = Math.max(1, Math.ceil(total / 9));
 
   return (
-    <PageShell withSidebar maxWidth="max-w-[1600px]">
+    <PageShell withSidebar maxWidth="max-w-[1600px]" noFooter={embedded} noNavbar={embedded}>
       <PageMeta 
         title={t('admin.oversight_title')} 
         description={t('admin.oversight_subtitle')} 

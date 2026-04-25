@@ -147,11 +147,11 @@ export default function Dashboard() {
             <div className="skeleton mt-4 h-3 w-64 rounded" />
           </div>
         ) : user?.role === "admin" ? (
-          <AdminDashboard />
+          <AdminDashboard embedded />
         ) : user?.role === "organization" ? (
-          <OrgDashboard />
+          <OrgDashboard embedded />
         ) : (
-          <VolunteerDashboard user={user} />
+          <VolunteerDashboard user={user} embedded />
         )}
       </section>
     </PageShell>

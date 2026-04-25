@@ -29,4 +29,14 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+eventSchema.index(
+  { title: 1, location: 1, date: 1, organization: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      location: { $type: "string" },
+    },
+  }
+);
+
 export default mongoose.model("Event", eventSchema);

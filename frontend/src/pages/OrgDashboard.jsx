@@ -41,7 +41,7 @@ const recommendedVolunteers = (hours, difficulty = 1) => {
   return Math.max(1, Math.ceil((hours * difficulty) / averageCapacity));
 };
 
-export default function OrgDashboard() {
+export default function OrgDashboard({ embedded = false }) {
   const { t } = useTranslation();
   const currentUser = getUser();
   const [events, setEvents] = useState([]);
@@ -66,15 +66,16 @@ export default function OrgDashboard() {
   const hasLoaded = useRef(false);
 
   const ownEvents = useMemo(() => {
-    if (!currentUser?.id) return [];
+    const currentUserId = currentUser?.id || currentUser?._id;
+    if (!currentUserId) return [];
     return events.filter((event) => {
       const ownerId =
         typeof event.organization === "string"
           ? event.organization
           : event.organization?._id;
-      return ownerId === currentUser.id;
+      return ownerId?.toString?.() === currentUserId?.toString?.();
     });
-  }, [events, currentUser?.id]);
+  }, [events, currentUser?.id, currentUser?._id]);
 
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -113,11 +114,24 @@ export default function OrgDashboard() {
 
   const handleMarkAttendance = async (userId, status) => {
     try {
+      const isObjectId = (value) => /^[a-fA-F0-9]{24}$/.test(String(value || ""));
+      if (!attendanceEventId || !isObjectId(attendanceEventId) || !isObjectId(userId)) {
+        setAttendanceMessage("Invalid attendance payload. Please re-select event and try again.");
+        return;
+      }
+      if (!["present", "absent"].includes(status)) {
+        setAttendanceMessage("Invalid attendance status.");
+        return;
+      }
+      const volunteer = attendanceList.find((item) => item.userId === userId);
+      if (!volunteer?.approved) {
+        setAttendanceMessage("Volunteer must be approved before attendance can be marked.");
+        return;
+      }
       await api.post("/attendance/mark", {
         eventId: attendanceEventId,
         userId,
         status,
-        verifiedByOrg: true,
       });
       setAttendanceList((prev) =>
         prev.map((item) =>
@@ -167,9 +181,91 @@ export default function OrgDashboard() {
     }
   };
 
+  const handleDeleteEvent = async (eventId) => {
+    const target = ownEvents.find((event) => event._id === eventId);
+    const title = target?.title || "this event";
+    const confirmed = window.confirm(
+      `Delete "${title}"? This will also remove related attendance and volunteer hour logs for this event.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/events/${eventId}`);
+      setEvents((prev) => prev.filter((event) => event._id !== eventId));
+      if (attendanceEventId === eventId) {
+        setAttendanceEventId("");
+        setAttendanceList([]);
+      }
+      setMessage("Event deleted successfully.");
+    } catch (err) {
+      setMessage(err?.response?.data?.message || "Failed to delete event.");
+    }
+  };
+
+  const handleApproveVolunteer = async (userId) => {
+    try {
+      if (!attendanceEventId || !userId) {
+        setAttendanceMessage("Select an event and volunteer to approve.");
+        return;
+      }
+      await api.put(`/events/${attendanceEventId}/approve/${userId}`);
+      setAttendanceList((prev) =>
+        prev.map((item) => (item.userId === userId ? { ...item, approved: true } : item))
+      );
+      setAttendanceMessage("");
+    } catch (err) {
+      setAttendanceMessage(err?.response?.data?.message || "Failed to approve volunteer.");
+    }
+  };
+
+  const handleScanAttendance = async (userId) => {
+    try {
+      if (!attendanceEventId || !userId) {
+        setAttendanceMessage("Select an event and volunteer first.");
+        return;
+      }
+
+      const scanned = window.prompt(
+        "Paste scanned QR payload or token",
+        ""
+      );
+      if (!scanned) return;
+
+      let qrToken = scanned.trim();
+      try {
+        const parsed = JSON.parse(scanned);
+        if (parsed?.qrToken) qrToken = parsed.qrToken;
+      } catch {
+        // Allow plain token input
+      }
+
+      if (!qrToken) {
+        setAttendanceMessage("Invalid QR payload.");
+        return;
+      }
+
+      await api.post("/attendance/scan", {
+        userId,
+        eventId: attendanceEventId,
+        qrToken,
+      });
+
+      setAttendanceList((prev) =>
+        prev.map((item) =>
+          item.userId === userId
+            ? { ...item, status: "present", verifiedByOrg: true }
+            : item
+        )
+      );
+      setAttendanceMessage("");
+    } catch (err) {
+      setAttendanceMessage(err?.response?.data?.message || "QR scan failed.");
+    }
+  };
+
   if (loading) {
     return (
-      <PageShell withSidebar maxWidth="max-w-[1600px]">
+      <PageShell withSidebar maxWidth="max-w-[1600px]" noFooter={embedded} noNavbar={embedded}>
         <div className="flex items-center justify-center py-40">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-brandBlue border-t-transparent" />
         </div>
@@ -178,7 +274,7 @@ export default function OrgDashboard() {
   }
 
   return (
-    <PageShell withSidebar maxWidth="max-w-[1600px]">
+    <PageShell withSidebar maxWidth="max-w-[1600px]" noFooter={embedded} noNavbar={embedded}>
       <PageMeta 
         title={t('org.workspace_title')} 
         description={t('org.workspace_subtitle')} 
@@ -404,24 +500,49 @@ export default function OrgDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                     <div className="flex items-center gap-4 w-full sm:w-auto">
+                       {!vol.approved && (
+                        <button 
+                         onClick={() => handleApproveVolunteer(vol.userId)}
+                         className="flex-1 sm:w-36 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm bg-brandBlue text-white hover:opacity-90"
+                        >
+                          Approve
+                        </button>
+                       )}
                        <button 
-                        onClick={() => handleMarkAttendance(vol.userId, 'present')}
-                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
-                          vol.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-muted hover:border-emerald-200 hover:text-emerald-600'
-                        }`}
-                       >
-                         {t('common.present')}
+                         onClick={() => handleMarkAttendance(vol.userId, 'present')}
+                         disabled={!vol.approved}
+                         className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                          !vol.approved
+                            ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                            : vol.status === 'present' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-muted hover:border-emerald-200 hover:text-emerald-600'
+                         }`}
+                        >
+                          {t('common.present')}
                        </button>
                        <button 
-                        onClick={() => handleMarkAttendance(vol.userId, 'absent')}
-                        className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
-                          vol.status === 'absent' ? 'bg-brandRed text-white' : 'bg-white border border-slate-200 text-muted hover:border-red-200 hover:text-brandRed'
-                        }`}
-                       >
-                         {t('common.absent')}
-                       </button>
-                    </div>
+                         onClick={() => handleMarkAttendance(vol.userId, 'absent')}
+                         disabled={!vol.approved}
+                         className={`flex-1 sm:w-32 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                          !vol.approved
+                            ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                            : vol.status === 'absent' ? 'bg-brandRed text-white' : 'bg-white border border-slate-200 text-muted hover:border-red-200 hover:text-brandRed'
+                         }`}
+                        >
+                          {t('common.absent')}
+                        </button>
+                        <button
+                         onClick={() => handleScanAttendance(vol.userId)}
+                         disabled={!vol.approved}
+                         className={`flex-1 sm:w-28 h-11 rounded-2xl text-[11px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm ${
+                          !vol.approved
+                            ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-brandBlue text-white hover:opacity-90'
+                         }`}
+                        >
+                          Scan QR
+                        </button>
+                     </div>
                   </div>
                 ))
               ) : attendanceEventId ? (
@@ -462,11 +583,21 @@ export default function OrgDashboard() {
                   <div key={event._id} className="group relative rounded-[22px] border border-slate-50 p-6 transition-all hover:bg-slate-50 shadow-soft">
                     <div className="flex justify-between items-start gap-4 mb-4">
                       <h4 className="text-[15px] font-bold text-ink leading-tight line-clamp-2">{event.title}</h4>
-                      <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-xl ${
-                        current >= required ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
-                      }`}>
-                        {current >= required ? t('org.optimal') : t('org.staffing_needed')}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-xl ${
+                          current >= required ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
+                          {current >= required ? t('org.optimal') : t('org.staffing_needed')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEvent(event._id)}
+                          className="h-7 rounded-lg border border-red-200 bg-red-50 px-2 text-[10px] font-bold uppercase tracking-wider text-brandRed hover:bg-red-100"
+                          aria-label={`Delete ${event.title}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                     
                     {/* Capacity Visualization */}

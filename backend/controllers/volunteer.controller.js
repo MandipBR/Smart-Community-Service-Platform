@@ -1,6 +1,7 @@
-﻿import VolunteerLog from "../models/VolunteerLog.js";
+import VolunteerLog from "../models/VolunteerLog.js";
 import User from "../models/User.js";
 import Event from "../models/Event.js";
+import Attendance from "../models/Attendance.js";
 import { logHoursSchema } from "../validators/volunteer.schemas.js";
 import { validate } from "../validators/validate.js";
 import { sendNotification } from "../utils/notification.js";
@@ -22,28 +23,83 @@ export const logHours = async (req, res) => {
     return res.status(404).json({ message: "Event not found" });
   }
 
+  const membership = (event.volunteers || []).find(
+    (entry) => entry.user?.toString() === req.user._id.toString()
+  );
+  if (!membership || !membership.approved) {
+    return res.status(403).json({
+      message:
+        "You must be approved for this event before logging volunteer hours",
+    });
+  }
+
+  const attendance = await Attendance.findOne({
+    eventId,
+    userId: req.user._id,
+    status: "present",
+    verifiedByOrg: true,
+  });
+  if (!attendance) {
+    return res.status(403).json({
+      message:
+        "Hours can only be logged after verified present attendance by the organization",
+    });
+  }
+
+  const existing = await VolunteerLog.findOne({ user: req.user._id, event: eventId });
+  if (existing) {
+    return res.status(409).json({ message: "Hours already logged for this event" });
+  }
+
   const hoursNum = Number(hours);
   const pointsEarned = hoursNum * 10;
 
-  await VolunteerLog.create({
-    user: req.user._id,
-    event: eventId,
-    hours: hoursNum,
-    pointsEarned,
-  });
-
-  const user = await User.findById(req.user._id);
-  user.points += pointsEarned;
-  user.level = Math.floor(user.points / 100) + 1;
-
-  if (user.points >= 100 && !user.badges.includes("100 Points")) {
-    user.badges.push("100 Points");
+  try {
+    await VolunteerLog.create({
+      user: req.user._id,
+      event: eventId,
+      hours: hoursNum,
+      pointsEarned,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "Hours already logged for this event" });
+    }
+    throw err;
   }
 
-  await user.save();
+  await User.updateOne(
+    { _id: req.user._id },
+    [
+      {
+        $set: {
+          points: { $add: [{ $ifNull: ["$points", 0] }, pointsEarned] },
+          _badges: { $ifNull: ["$badges", []] },
+        },
+      },
+      {
+        $set: {
+          level: { $add: [{ $floor: { $divide: ["$points", 100] } }, 1] },
+          badges: {
+            $cond: [
+              {
+                $and: [
+                  { $gte: ["$points", 100] },
+                  { $not: [{ $in: ["100 Points", "$_badges"] }] },
+                ],
+              },
+              { $concatArrays: ["$_badges", ["100 Points"]] },
+              "$_badges",
+            ],
+          },
+        },
+      },
+      { $unset: "_badges" },
+    ]
+  );
 
   await sendNotification(
-    user._id,
+    req.user._id,
     "CERTIFICATE_READY",
     `Your ${hoursNum} hours for ${event.title} were recorded.`
   );

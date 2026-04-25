@@ -1,9 +1,13 @@
 import Event from "../models/Event.js";
 import User from "../models/User.js";
 import VolunteerLog from "../models/VolunteerLog.js";
+import Attendance from "../models/Attendance.js";
+import Notification from "../models/Notification.js";
+import jwt from "jsonwebtoken";
 import { createEventSchema } from "../validators/event.schemas.js";
 import { validate } from "../validators/validate.js";
 import { sendNotification } from "../utils/notification.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const toRad = (value) => (value * Math.PI) / 180;
 const distanceKm = (lat1, lng1, lat2, lng2) => {
@@ -34,10 +38,21 @@ export const createEvent = async (req, res, next) => {
     }
     const parsed = validate(createEventSchema, req.body, res);
     if (!parsed) return;
-    const event = await Event.create({
-      ...parsed,
-      organization: req.user._id,
-    });
+    let event;
+    try {
+      event = await Event.create({
+        ...parsed,
+        organization: req.user._id,
+      });
+    } catch (err) {
+      if (err?.code === 11000) {
+        return res.status(409).json({
+          message:
+            "A similar event already exists for the same organization, date, and location",
+        });
+      }
+      throw err;
+    }
 
     const matchSkills = Array.isArray(event.skills) ? event.skills : [];
     const matchTags = Array.isArray(event.tags) ? event.tags : [];
@@ -164,21 +179,77 @@ export const getEventById = async (req, res, next) => {
 
 export const joinEvent = async (req, res, next) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await Event.findById(req.params.id).populate(
+      "organization",
+      "name organizationName"
+    );
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const alreadyJoined = event.volunteers.some(
-      (v) => v.user.toString() === req.user._id.toString()
+    const updated = await Event.findOneAndUpdate(
+      {
+        _id: event._id,
+        "volunteers.user": { $ne: req.user._id },
+      },
+      {
+        $push: { volunteers: { user: req.user._id } },
+      },
+      { new: true }
     );
-    if (alreadyJoined) {
+
+    if (!updated) {
       return res.status(400).json({ message: "Already requested to join" });
     }
 
-    event.volunteers.push({ user: req.user._id });
-    await event.save();
+    const qrToken = jwt.sign(
+      {
+        userId: req.user._id.toString(),
+        eventId: event._id.toString(),
+        type: "attendance_qr",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    const qrPayload = JSON.stringify({
+      userId: req.user._id.toString(),
+      eventId: event._id.toString(),
+      qrToken,
+    });
+    const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(
+      qrPayload
+    )}&size=240`;
+
+    const eventDate = event.date ? new Date(event.date) : null;
+    const formattedDate = eventDate
+      ? eventDate.toLocaleString()
+      : "To be announced";
+
+    try {
+      await sendEmail(
+        req.user.email,
+        `Event Join Confirmation: ${event.title}`,
+        `<div style="font-family: sans-serif; max-width: 640px;">
+          <h2>You're registered for ${event.title}</h2>
+          <p>Your join request has been submitted successfully.</p>
+          <p><strong>When:</strong> ${formattedDate}</p>
+          <p><strong>Where:</strong> ${event.location || "Location TBD"}</p>
+          <p>Please keep this QR for attendance verification at the event.</p>
+          <img src="${qrCodeUrl}" alt="Attendance QR code" style="width:240px;height:240px;border:1px solid #ddd;padding:8px;border-radius:8px;" />
+        </div>`
+      );
+    } catch (emailErr) {
+      console.error("Join confirmation email failed:", emailErr?.message || emailErr);
+    }
+
+    await sendNotification(
+      req.user._id,
+      "EVENT_REMINDER",
+      `Reminder: ${event.title} is scheduled for ${formattedDate}. Bring your attendance QR.`,
+      { eventId: event._id }
+    );
 
     res.json({ message: "Request sent to organization" });
   } catch (err) {
@@ -217,6 +288,31 @@ export const approveVolunteer = async (req, res, next) => {
     );
 
     res.json({ message: "Volunteer approved" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteEvent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const event = await Event.findById(id).select("_id organization");
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    if (event.organization.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await Promise.all([
+      Attendance.deleteMany({ eventId: event._id }),
+      VolunteerLog.deleteMany({ event: event._id }),
+      Notification.deleteMany({ "meta.eventId": event._id }),
+      Event.deleteOne({ _id: event._id }),
+    ]);
+
+    return res.json({ message: "Event deleted successfully" });
   } catch (err) {
     next(err);
   }

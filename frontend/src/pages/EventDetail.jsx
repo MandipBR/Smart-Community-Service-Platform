@@ -44,10 +44,23 @@ export default function EventDetail() {
   const handleJoin = async () => {
     try {
       await api.post(`/events/${id}/join`);
-      alert("Application successfully submitted!");
-      window.location.reload();
+      setMessage("Application successfully submitted.");
+      setEvent((prev) => {
+        if (!prev) return prev;
+        const currentUser = getUserFromToken() || getUser();
+        const currentUserId = currentUser?.id || currentUser?._id;
+        if (!currentUserId) return prev;
+        const alreadyJoined = (prev.volunteers || []).some(
+          (v) => String(v?.user?._id || v?.user) === String(currentUserId)
+        );
+        if (alreadyJoined) return prev;
+        return {
+          ...prev,
+          volunteers: [...(prev.volunteers || []), { user: currentUserId, approved: false }],
+        };
+      });
     } catch (err) {
-      alert(err?.response?.data?.message || "Join request failed.");
+      setMessage(err?.response?.data?.message || "Join request failed.");
     }
   };
 
@@ -140,7 +153,7 @@ export default function EventDetail() {
                       rel="noopener noreferrer"
                       className="text-xs font-bold text-brandRed hover:underline flex items-center gap-2"
                     >
-                      🚀 Get Navigational Data
+                      Open Route
                     </a>
                   </div>
                   <div className="h-80 w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm z-0">
@@ -181,7 +194,7 @@ export default function EventDetail() {
                   {(() => {
                     const isVolunteer = userRole === "volunteer";
                     const hasJoined = (Array.isArray(event?.volunteers) ? event.volunteers : []).some(
-                      (v) => (v?.user?._id || v?.user) === userId
+                      (v) => String(v?.user?._id || v?.user) === String(userId || "")
                     );
 
                     if (!hasToken()) {
@@ -226,9 +239,9 @@ export default function EventDetail() {
                     <p className="text-3xl font-bold">{eventHours * 10}</p>
                     <p className="text-[10px] uppercase font-bold text-white/50">Point Yield</p>
                   </div>
-                  <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">
-                    ⚡
-                  </div>
+                    <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">
+                      PT
+                    </div>
                 </div>
               </div>
             </aside>

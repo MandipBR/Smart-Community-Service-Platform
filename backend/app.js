@@ -44,6 +44,29 @@ app.use(
 );
 app.use(express.json());
 
+if (process.env.NODE_ENV !== "production") {
+  const redactSensitive = (value) => {
+    if (!value || typeof value !== "object") return value;
+    const sensitive = new Set(["password", "currentPassword", "newPassword", "otp", "credential"]);
+    if (Array.isArray(value)) return value.map((item) => redactSensitive(item));
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [
+        key,
+        sensitive.has(key) ? "[REDACTED]" : redactSensitive(val),
+      ])
+    );
+  };
+
+  app.use((req, res, next) => {
+    console.log("Incoming:", {
+      method: req.method,
+      url: req.originalUrl,
+      body: redactSensitive(req.body),
+    });
+    next();
+  });
+}
+
 const isDev = process.env.NODE_ENV !== "production";
 const authLimiter = isDev
   ? (req, res, next) => next()

@@ -10,6 +10,7 @@ export default function PageShell({
   contentClassName = "",
   unreadCount = 0,
   noFooter = false,
+  noNavbar = false,
   noPadding = false,
   withSidebar = false, // new prop for dashboard layouts
 }) {
@@ -17,11 +18,13 @@ export default function PageShell({
 
   return (
     <div className="min-h-screen flex flex-col bg-surface transition-colors duration-500">
-      <Navbar
-        links={links}
-        unreadCount={unreadCount}
-        onMenuClick={withSidebar ? () => setSidebarOpen(true) : undefined}
-      />
+      {!noNavbar && (
+        <Navbar
+          links={links}
+          unreadCount={unreadCount}
+          onMenuClick={withSidebar ? () => setSidebarOpen(true) : undefined}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {withSidebar && (

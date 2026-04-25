@@ -190,7 +190,7 @@ export default function Navbar({ links: overrideLinks, unreadCount = 0, onMenuCl
             <button
               onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'ne' : 'en')}
               className="flex h-9 items-center gap-1.5 rounded-lg border border-slate-200/60 px-3 text-[11px] font-bold uppercase tracking-wider text-ink transition-all hover:bg-slate-50 dark:hover:bg-slate-800"
-              title="切换语言 / Switch Language"
+              title="Switch language"
             >
               {i18n.language === 'en' ? 'न' : 'EN'}
             </button>

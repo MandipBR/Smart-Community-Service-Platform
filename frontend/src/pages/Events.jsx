@@ -31,6 +31,7 @@ export default function Events() {
   });
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
+  const [pendingJoinId, setPendingJoinId] = useState("");
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -179,7 +180,7 @@ export default function Events() {
           </div>
           <div className="flex items-end gap-2">
             <button className="nepal-button-secondary w-full h-11 text-xs font-bold shadow-sm" onClick={requestLocation} type="button">
-              📍 {t('events.my_location')}
+              {t('events.my_location')}
             </button>
           </div>
         </div>
@@ -235,7 +236,7 @@ export default function Events() {
                 {(() => {
                   const isVolunteer = authRole === "volunteer";
                   const hasJoined = event.volunteers?.some(
-                    (v) => (v.user?._id || v.user) === authUserId
+                    (v) => String(v.user?._id || v.user) === String(authUserId || "")
                   );
 
                   if (!hasToken()) {
@@ -251,20 +252,36 @@ export default function Events() {
                         {t('events.joined')}
                       </button>
                     ) : (
-                      <button 
-                        className="nepal-button h-10 px-5 text-xs font-bold" 
+                      <button
+                        className="nepal-button h-10 px-5 text-xs font-bold"
+                        disabled={pendingJoinId === String(event._id || event.id)}
                         onClick={async (e) => {
                           e.preventDefault();
                           try {
+                            const joinId = String(event._id || event.id);
+                            setPendingJoinId(joinId);
                             await api.post(`/events/${event._id || event.id}/join`);
-                            alert("Application sent!");
-                            window.location.reload();
+                            setMessage("Application sent!");
+                            setEvents((prev) =>
+                              prev.map((row) => {
+                                const rowId = String(row._id || row.id);
+                                if (rowId !== joinId) return row;
+                                return {
+                                  ...row,
+                                  volunteers: [...(row.volunteers || []), { user: authUserId, approved: false }],
+                                };
+                              })
+                            );
                           } catch (err) {
-                            alert(err?.response?.data?.message || "Join failed.");
+                            setMessage(err?.response?.data?.message || "Join failed.");
+                          } finally {
+                            setPendingJoinId("");
                           }
                         }}
                       >
-                        {t('events.join_mission')}
+                        {pendingJoinId === String(event._id || event.id)
+                          ? t("common.loading")
+                          : t('events.join_mission')}
                       </button>
                     );
                   }
@@ -278,8 +295,8 @@ export default function Events() {
 
       {status === "ready" && events.length === 0 && (
         <div className="nepal-card flex flex-col items-center gap-6 p-20 text-center animate-fadeUp">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 text-4xl shadow-inner">
-            🔍
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 text-2xl font-bold text-muted shadow-inner">
+            0
           </div>
           <div className="max-w-[420px]">
             <h3 className="text-xl font-bold text-ink mb-2">No missions found</h3>

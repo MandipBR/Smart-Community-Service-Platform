@@ -8,6 +8,7 @@ import {
   getEventById,
   joinEvent,
   approveVolunteer,
+  deleteEvent,
   getRecommendedEvents,
   getNearbyEvents,
 } from "../controllers/event.controller.js";
@@ -20,6 +21,7 @@ router.get("/nearby", getNearbyEvents);
 router.get("/", getEvents);
 router.post("/:id/join", auth, role("volunteer"), joinEvent);
 router.put("/:eventId/approve/:userId", auth, role("organization"), approveVolunteer);
+router.delete("/:id", auth, role("organization"), deleteEvent);
 router.get("/:id", getEventById);
 
 export default router;
