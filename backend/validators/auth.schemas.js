@@ -39,3 +39,14 @@ export const onboardingSchema = z.object({
     )
     .optional(),
 });
+
+// Fix: Added schemas for endpoints that previously had no input validation
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+});
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  otp: z.string().length(6, "OTP must be 6 digits"),
+});

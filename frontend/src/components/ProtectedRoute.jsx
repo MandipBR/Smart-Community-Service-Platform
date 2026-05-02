@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   clearAuth,
   getToken,
@@ -9,6 +10,7 @@ import {
 } from "../services/api";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const token = getToken();
   const expired = !token || isTokenExpired(token);
@@ -47,17 +49,18 @@ export default function ProtectedRoute({ children, allowedRoles }) {
       <div className="nepal-page">
         <div className="mx-auto flex min-h-screen w-full max-w-[1280px] items-center justify-center px-6 py-10">
           <div className="panel w-full max-w-md p-8 text-center">
+            {/* Fix: was hardcoded English — now uses i18n */}
             <h2 className="mb-2 text-2xl font-semibold text-brandRed">
-              Access Denied
+              {t("access_denied.title", "Access Denied")}
             </h2>
             <p className="mb-5 text-sm leading-6 text-muted">
-              You do not have permission to access this page.
+              {t("access_denied.subtitle", "You do not have permission to access this page.")}
             </p>
             <Link
               to="/dashboard"
               className="inline-flex h-11 items-center justify-center rounded-xl bg-brandRed px-4 text-white transition hover:bg-brandRed/90"
             >
-              Go to Dashboard
+              {t("access_denied.go_dashboard", "Go to Dashboard")}
             </Link>
           </div>
         </div>

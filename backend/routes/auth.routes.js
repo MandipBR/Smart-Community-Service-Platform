@@ -2,14 +2,15 @@ import express from "express";
 import {
   signup,
   login,
-  verifyEmail,
   googleSignIn,
-  getMe,
+  verifyEmail,
   completeOnboarding,
   getOrgStatus,
   verifyOtp,
   changePassword,
 } from "../controllers/auth.controller.js";
+// Fix: import getMe from user.controller (canonical version) — removed duplicate in auth.controller
+import { getMe } from "../controllers/user.controller.js";
 import auth from "../middleware/auth.middleware.js";
 
 const router = express.Router();

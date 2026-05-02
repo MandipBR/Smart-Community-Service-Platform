@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { setAuth } from "../services/api";
-import { jwtDecode } from "jwt-decode";
+import api from "../services/api";
 import { useTranslation } from "react-i18next";
 
 export default function GoogleSuccess() {
@@ -16,17 +16,29 @@ export default function GoogleSuccess() {
       return;
     }
 
-    try {
-      const decoded = jwtDecode(token);
-      setAuth(token, {
-        id: decoded.id,
-        name: decoded.name || "User",
-        role: decoded.role || "volunteer",
-      });
-      navigate("/dashboard", { replace: true });
-    } catch {
-      navigate("/login", { replace: true });
-    }
+    // Fix: verify the token server-side via /api/auth/me before trusting it.
+    // Previously used jwtDecode alone which only decodes — it does NOT verify the signature.
+    const verify = async () => {
+      try {
+        // Store token first so the api interceptor can attach it as Authorization header
+        setAuth(token, null);
+        // Backend verifies the token — if invalid it returns 401
+        const meRes = await api.get("/auth/me");
+        const user = meRes.data;
+        // Now safe to persist user data since backend confirmed the token
+        setAuth(token, {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+        });
+        navigate("/dashboard", { replace: true });
+      } catch {
+        // Token was invalid/expired — clear any partially stored data and go to login
+        navigate("/login", { replace: true });
+      }
+    };
+
+    verify();
   }, [params, navigate]);
 
   return (

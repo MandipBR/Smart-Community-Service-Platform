@@ -49,7 +49,9 @@ const userSchema = new mongoose.Schema(
     orgApprovalStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "approved",
+      // Fix: was "approved" — dangerous default that would auto-approve any new org user
+      // created without explicitly setting this field
+      default: "pending",
     },
     causes: [{ type: String }],
     skills: [{ type: String }],

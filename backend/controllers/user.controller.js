@@ -7,6 +7,8 @@ import Review from "../models/Review.js";
 import Attendance from "../models/Attendance.js";
 import multer from "multer";
 import path from "path";
+import { updateProfileSchema } from "../validators/volunteer.schemas.js";
+import { validate } from "../validators/validate.js";
 
 // Multer config
 const storage = multer.diskStorage({
@@ -20,10 +22,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
+  // Fix: restrict to safe image MIME types only — image/svg+xml can contain XSS
+  const SAFE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (SAFE_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only images are allowed"), false);
+    cb(new Error("Only JPEG, PNG, WebP and GIF images are allowed"), false);
   }
 };
 
@@ -67,21 +71,24 @@ export const getUserById = async (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
+  const parsed = validate(updateProfileSchema, req.body, res);
+  if (!parsed) return;
+
   const update = {
-    name: req.body.name ?? req.user.name,
-    phone: req.body.phone ?? req.user.phone,
-    bio: req.body.bio ?? req.user.bio,
-    location: req.body.location ?? req.user.location,
-    causes: Array.isArray(req.body.causes) ? req.body.causes : req.user.causes,
-    skills: Array.isArray(req.body.skills) ? req.body.skills : req.user.skills,
-    availability: req.body.availability ?? req.user.availability,
+    name: parsed.name ?? req.user.name,
+    phone: parsed.phone ?? req.user.phone,
+    bio: parsed.bio ?? req.user.bio,
+    location: parsed.location ?? req.user.location,
+    causes: Array.isArray(parsed.causes) ? parsed.causes : req.user.causes,
+    skills: Array.isArray(parsed.skills) ? parsed.skills : req.user.skills,
+    availability: parsed.availability ?? req.user.availability,
   };
 
   if (req.user.role === "organization") {
-    update.organizationName = req.body.organizationName ?? req.user.organizationName;
-    update.organizationType = req.body.organizationType ?? req.user.organizationType;
-    update.teamMembers = Array.isArray(req.body.teamMembers)
-      ? req.body.teamMembers
+    update.organizationName = parsed.organizationName ?? req.user.organizationName;
+    update.organizationType = parsed.organizationType ?? req.user.organizationType;
+    update.teamMembers = Array.isArray(parsed.teamMembers)
+      ? parsed.teamMembers
       : req.user.teamMembers;
   }
 

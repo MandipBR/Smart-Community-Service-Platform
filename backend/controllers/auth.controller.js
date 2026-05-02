@@ -10,6 +10,8 @@ import {
   loginSchema,
   googleSchema,
   onboardingSchema,
+  changePasswordSchema,
+  verifyOtpSchema,
 } from "../validators/auth.schemas.js";
 import { validate } from "../validators/validate.js";
 
@@ -169,7 +171,8 @@ export const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
-    // Bypass OTP for admins
+    // NOTE (FYP): Admin users bypass OTP for demo convenience.
+    // In production, admins should also complete OTP / MFA.
     if (user.role === "admin") {
       return res.json({
         token: generateToken(user),
@@ -212,8 +215,9 @@ export const login = async (req, res) => {
 };
 
 export const verifyOtp = async (req, res) => {
-  const { email, otp } = req.body;
-  if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
+  const parsed = validate(verifyOtpSchema, req.body, res);
+  if (!parsed) return;
+  const { email, otp } = parsed;
 
   const user = await User.findOne({ email });
   if (!user || !user.loginOtp || !user.loginOtpExpires) {
@@ -243,7 +247,9 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const parsed = validate(changePasswordSchema, req.body, res);
+  if (!parsed) return;
+  const { currentPassword, newPassword } = parsed;
   const user = await User.findById(req.user._id);
 
   if (!user.password) {
@@ -301,7 +307,7 @@ export const googleSignIn = async (req, res) => {
         user = await User.create({
           name,
           email,
-          password: "",
+          // Fix: Google OAuth users have no password — store undefined, not empty string
           role: userRole,
           orgApprovalStatus,
           isVerified: true,
@@ -348,41 +354,23 @@ export const googleSignIn = async (req, res) => {
   }
 };
 
-export const getMe = async (req, res) => {
-  res.json({
-    id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-    avatar: req.user.avatar,
-    onboardingCompleted: req.user.onboardingCompleted,
-    profile: {
-      phone: req.user.phone,
-      bio: req.user.bio,
-      location: req.user.location,
-      organizationName: req.user.organizationName,
-      organizationType: req.user.organizationType,
-      causes: req.user.causes,
-      skills: req.user.skills,
-      availability: req.user.availability,
-      teamMembers: req.user.teamMembers,
-    },
-    orgApprovalStatus: req.user.orgApprovalStatus,
-  });
-};
+// Fix: removed duplicate getMe — the canonical version lives in user.controller.js
+// auth.routes.js now imports getMe from user.controller (see auth.routes.js)
 
+// Fix: org-status no longer returns raw orgApprovalStatus from a public endpoint.
+// Now it only confirms if the org exists (boolean) so callers can react without
+// exposing private approval metadata to unauthenticated users.
 export const getOrgStatus = async (req, res) => {
   const { email } = req.query;
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
-  const org = await User.findOne({ email, role: "organization" }).select(
-    "orgApprovalStatus"
-  );
+  const org = await User.findOne({ email, role: "organization" }).select("orgApprovalStatus");
   if (!org) {
-    return res.json({ orgApprovalStatus: null });
+    return res.json({ exists: false });
   }
-  res.json({ orgApprovalStatus: org.orgApprovalStatus });
+  // Only return approved/not-approved as a boolean — not the raw status string
+  return res.json({ exists: true, approved: org.orgApprovalStatus === "approved" });
 };
 
 export const completeOnboarding = async (req, res) => {
