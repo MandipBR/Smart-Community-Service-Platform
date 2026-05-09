@@ -1,4 +1,7 @@
-﻿export default function MetricRing({ value = 0, label }) {
+import { useTranslation } from "react-i18next";
+
+export default function MetricRing({ value = 0, label }) {
+  const { t } = useTranslation();
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div className="flex items-center gap-4">
@@ -22,7 +25,7 @@
       </div>
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-muted">{label}</p>
-        <p className="text-lg font-semibold text-ink">Impact score</p>
+        <p className="text-lg font-semibold text-ink">{t("impact.score", "Impact score")}</p>
       </div>
     </div>
   );

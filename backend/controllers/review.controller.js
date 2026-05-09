@@ -32,12 +32,19 @@ export const createReview = async (req, res) => {
     return res.status(400).json({ message: "Review already submitted" });
   }
 
-  await Review.create({
-    volunteer: req.user._id,
-    organization: organizationId,
-    rating,
-    comment: comment || "",
-  });
+  try {
+    await Review.create({
+      volunteer: req.user._id,
+      organization: organizationId,
+      rating,
+      comment: comment || "",
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "Review already submitted" });
+    }
+    throw err;
+  }
 
   res.status(201).json({ message: "Review submitted" });
 };

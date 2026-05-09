@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useTranslation } from "react-i18next";
 import authVibe from "../assets/i18n/auth-vibe.png";
+import GoogleAuthButton from "../components/GoogleAuthButton.jsx";
 
 export default function OrgSignup() {
   const { t } = useTranslation();
@@ -191,6 +192,25 @@ export default function OrgSignup() {
               </div>
             </div>
 
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+              <span className="h-px flex-1 bg-slate-100" />
+              or continue with google
+              <span className="h-px flex-1 bg-slate-100" />
+            </div>
+            <GoogleAuthButton
+              role="organization"
+              csrfToken={csrfToken}
+              mountId="googleSignUpOrg"
+              onError={setError}
+              onSuccess={(payload) => {
+                if (payload?.user?.role !== "organization") {
+                  setError("This Google account is not configured as an organization.");
+                  return;
+                }
+                navigate("/dashboard", { replace: true });
+              }}
+              width={380}
+            />
             <button className="nepal-button w-full mt-4 shadow-lift" type="submit" disabled={loading || !allowOrgSignup}>
               {loading ? t('auth.creating_profile') : t('auth.org_register_btn')}
             </button>

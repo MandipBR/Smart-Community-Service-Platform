@@ -279,6 +279,21 @@
     "starter": "Starter",
     "load_error": "Unable to load the community leaderboard."
   },
+  "my_events": {
+    "badge": "My Events",
+    "title": "Track every event you've joined from one place",
+    "subtitle": "See pending requests, approved opportunities, and completed service work without losing the thread.",
+    "history": "Event History",
+    "history_title": "Joined, approved, and completed opportunities",
+    "search_placeholder": "Search your events",
+    "status_all": "all",
+    "status_pending": "pending",
+    "status_approved": "approved",
+    "status_completed": "completed",
+    "empty_title": "No events found",
+    "empty_message": "Your joined events will appear here once you request to join or complete an opportunity.",
+    "load_error": "Unable to load your events."
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Personalize your Smart Community experience, update security preferences, and manage your public profile.",
@@ -400,7 +415,15 @@
     "nav_home": "Home",
     "nav_events": "Events",
     "nav_leaderboard": "Leaderboard",
-    "nav_about": "About"
+    "nav_about": "About",
+    "nav_ai_matches": "AI Matches",
+    "nearby": "Nearby",
+    "map": "Map",
+    "location_tbd": "Location TBD",
+    "date_tbd": "Date TBD",
+    "community": "Community",
+    "view_event": "View event",
+    "match": "match"
   },
   "not_found": {
     "title": "Page not found",
@@ -439,5 +462,55 @@
     "title": "Access Denied",
     "subtitle": "You do not have permission to access this page.",
     "go_dashboard": "Go to Dashboard"
+  },
+  "admin_logs": {
+    "load_error": "Unable to load admin logs.",
+    "nav_approvals": "Approvals",
+    "nav_analytics": "Analytics",
+    "nav_dashboard": "Dashboard",
+    "badge": "Admin Logs",
+    "title": "Audit activity",
+    "subtitle": "Track organization approvals, rejections, and moderation actions.",
+    "admin_fallback": "Admin",
+    "system_fallback": "system",
+    "empty": "No admin logs yet."
+  },
+  "nearby_events": {
+    "geo_unsupported": "Geolocation is not supported in this browser.",
+    "location_error": "Unable to access your location.",
+    "load_error": "Unable to load nearby events.",
+    "badge": "Nearby Events",
+    "title": "Closest opportunities",
+    "subtitle": "Smart volunteer routing based on your current location.",
+    "empty": "No nearby events found."
+  },
+  "recommended": {
+    "signin_required": "Sign in to unlock personalized recommendations.",
+    "forbidden": "Recommendations are only available for eligible signed-in accounts.",
+    "load_error": "Unable to load recommendations.",
+    "badge": "AI Match",
+    "title": "Recommended for you",
+    "subtitle": "Personalized matches based on your skills, causes, and location.",
+    "empty": "No recommendations yet."
+  },
+  "faq": {
+    "meta_title": "Help Center",
+    "meta_description": "A clear explanation of how the platform works for volunteers, organizations, and admins.",
+    "badge": "Help Center",
+    "title": "Everything important, without the noise",
+    "subtitle": "A clear explanation of how the platform works so every role knows what to expect.",
+    "eyebrow": "Frequently Asked Questions",
+    "section_title": "Answers for volunteers, organizations, and admins",
+    "section_subtitle": "These answers mirror the current platform behavior and workflows already built into the app.",
+    "q1": "How do I start volunteering?",
+    "a1": "Create a volunteer account, complete onboarding, and browse events by cause, date, skills, or location.",
+    "q2": "How are organizations approved?",
+    "a2": "Organization accounts enter a pending state until an administrator reviews and approves the account.",
+    "q3": "How do points and badges work?",
+    "a3": "Hours and verified attendance contribute points. Milestones unlock badges that appear in volunteer profiles and certificates.",
+    "q4": "Can organizations verify attendance?",
+    "a4": "Yes. Approved organizations can mark attendance, which can automatically create verified volunteer logs and trigger certificate-ready notifications.",
+    "q5": "Are recommendations personalized?",
+    "a5": "Yes. Recommended opportunities use cause, skills, prior activity, and optionally location proximity to rank events."
   }
 }

@@ -1,14 +1,16 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import EventCard from "../components/EventCard.jsx";
 
 export default function NearbyEvents() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState(() =>
-    navigator.geolocation ? "" : "Geolocation is not supported in this browser."
+    navigator.geolocation ? "" : t("nearby_events.geo_unsupported", "Geolocation is not supported in this browser.")
   );
   const [coords, setCoords] = useState(null);
 
@@ -16,9 +18,9 @@ export default function NearbyEvents() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setMessage("Unable to access your location.")
+      () => setMessage(t("nearby_events.location_error", "Unable to access your location."))
     );
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const load = async () => {
@@ -29,27 +31,27 @@ export default function NearbyEvents() {
         });
         setEvents(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        setMessage(err?.response?.data?.message || "Unable to load nearby events.");
+        setMessage(err?.response?.data?.message || t("nearby_events.load_error", "Unable to load nearby events."));
       }
     };
     load();
-  }, [coords]);
+  }, [coords, t]);
 
   return (
     <div className="nepal-page">
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/events", label: "Events" },
-            { to: "/recommended-events", label: "AI Matches" },
-            { to: "/map", label: "Map" },
+            { to: "/events", label: t("common.nav_events", "Events") },
+            { to: "/recommended-events", label: t("common.nav_ai_matches", "AI Matches") },
+            { to: "/map", label: t("common.map", "Map") },
           ]}
         />
 
         <Hero
-          badge="Nearby Events"
-          title="Closest opportunities"
-          subtitle="Smart volunteer routing based on your current location."
+          badge={t("nearby_events.badge", "Nearby Events")}
+          title={t("nearby_events.title", "Closest opportunities")}
+          subtitle={t("nearby_events.subtitle", "Smart volunteer routing based on your current location.")}
         />
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
@@ -60,19 +62,19 @@ export default function NearbyEvents() {
               key={event._id}
               id={event._id}
               title={event.title}
-              location={event.location || "Location TBD"}
-              date={event.date ? new Date(event.date).toLocaleString() : "Date TBD"}
+              location={event.location || t("common.location_tbd", "Location TBD")}
+              date={event.date ? new Date(event.date).toLocaleString() : t("common.date_tbd", "Date TBD")}
               badge={typeof event.distanceKm === "number" ? `${event.distanceKm.toFixed(1)} km` : undefined}
-              tags={event.tags || event.skills || ["Community"]}
+              tags={event.tags || event.skills || [t("common.community", "Community")]}
               actions={
                 <Link className="nepal-button-secondary" to={`/events/${event._id}`}>
-                  View event
+                  {t("common.view_event", "View event")}
                 </Link>
               }
             />
           ))}
           {events.length === 0 ? (
-            <p className="text-sm text-muted">No nearby events found.</p>
+            <p className="text-sm text-muted">{t("nearby_events.empty", "No nearby events found.")}</p>
           ) : null}
         </section>
       </div>

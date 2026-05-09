@@ -39,6 +39,8 @@ import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminEvents from "./pages/AdminEvents.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Settings from "./pages/Settings.jsx";
+import Terms from "./pages/Terms.jsx";
+import Privacy from "./pages/Privacy.jsx";
 
 export default function App() {
   return (
@@ -51,6 +53,8 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/events" element={<Events />} />
         <Route path="/events/:id" element={<EventDetail />} />
         <Route
@@ -138,11 +142,7 @@ export default function App() {
         <Route path="/org/:id/impact" element={<OrgImpact />} />
         <Route
           path="/org/:id"
-          element={
-            <ProtectedRoute>
-              <OrgPublicProfile />
-            </ProtectedRoute>
-          }
+          element={<OrgPublicProfile />}
         />
         <Route
           path="/admin"
@@ -187,11 +187,7 @@ export default function App() {
         <Route path="/google-success" element={<GoogleSuccess />} />
         <Route
           path="/volunteer/:id"
-          element={
-            <ProtectedRoute>
-              <VolunteerProfile />
-            </ProtectedRoute>
-          }
+          element={<VolunteerProfile />}
         />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route

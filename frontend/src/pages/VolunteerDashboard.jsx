@@ -26,6 +26,8 @@ export default function VolunteerDashboard({ user: propUser, embedded = false })
         entry.approved
     )
   );
+  const selectedLogEvent = eligibleLogEvents.find((event) => event._id === logData.eventId);
+  const resolvedHours = selectedLogEvent?.hours || "";
 
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -68,11 +70,12 @@ export default function VolunteerDashboard({ user: propUser, embedded = false })
 
   const handleLogHours = async (e) => {
     e.preventDefault();
-    if (!logData.eventId || !logData.hours) return;
+    if (!logData.eventId) return;
     try {
       await api.post("/volunteer/log", {
         eventId: logData.eventId,
-        hours: Number(logData.hours),
+        // Sent for compatibility; backend enforces authoritative event hours.
+        hours: Number(resolvedHours || 0),
       });
       setMessage("Hours logged successfully.");
       setLogData({ eventId: "", hours: "" });
@@ -167,7 +170,9 @@ export default function VolunteerDashboard({ user: propUser, embedded = false })
               <div className="mb-10">
                 <p className="eyebrow Onboarding mb-4">Operations</p>
                 <h3 className="text-2xl font-bold text-ink">{t('dashboard.action_center')}</h3>
-                <p className="mt-2 text-md text-muted font-medium">{t('dashboard.action_center_subtitle')}</p>
+                <p className="mt-2 text-md text-muted font-medium">
+                  Hours are verified from organization attendance and event configuration.
+                </p>
               </div>
               
               <form onSubmit={handleLogHours} className="grid gap-6 md:grid-cols-[1fr_160px_180px]">
@@ -189,9 +194,8 @@ export default function VolunteerDashboard({ user: propUser, embedded = false })
                     type="number" 
                     className="nepal-input h-14 font-bold" 
                     placeholder={t('dashboard.hours_input')}
-                    value={logData.hours}
-                    onChange={(e) => setLogData({ ...logData, hours: e.target.value })}
-                    required
+                    value={resolvedHours}
+                    readOnly
                     min="0.5"
                     step="0.5"
                   />

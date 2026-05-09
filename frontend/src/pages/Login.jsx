@@ -4,6 +4,7 @@ import api, { setAuth } from "../services/api";
 import { useTranslation } from "react-i18next";
 import PageMeta from "../components/PageMeta.jsx";
 import authVibe from "../assets/i18n/auth-vibe.png";
+import GoogleAuthButton from "../components/GoogleAuthButton.jsx";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -14,9 +15,6 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleRole, setGoogleRole] = useState(
-    localStorage.getItem("google_role") || "volunteer"
-  );
   const [csrfToken, setCsrfToken] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,51 +29,6 @@ export default function Login() {
     const secureFlag = import.meta.env.MODE === "production" ? "; Secure" : "";
     document.cookie = `g_csrf_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secureFlag}`;
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("google_role", googleRole);
-  }, [googleRole]);
-
-  /* Google Sign-In SDK */
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) return;
-
-    let attempts = 0;
-    const tryInit = () => {
-      if (!window.google?.accounts?.id) {
-        attempts += 1;
-        if (attempts < 20) setTimeout(tryInit, 150);
-        return;
-      }
-
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          try {
-            const res = await api.post("/auth/google", {
-              credential: response.credential,
-              csrfToken,
-              role: googleRole,
-            });
-            setAuth(res.data.token, res.data.user);
-            navigate(from, { replace: true });
-          } catch (err) {
-            setError(
-              err?.response?.data?.message || "Google sign-in failed. Please try again."
-            );
-          }
-        },
-      });
-
-      window.google.accounts.id.renderButton(
-        document.getElementById("googleSignIn"),
-        { theme: "outline", size: "large", width: "full" }
-      );
-    };
-
-    tryInit();
-  }, [navigate, csrfToken, googleRole, from]);
 
   /* Step 1: Submit credentials */
   const handleLogin = async (e) => {
@@ -191,30 +144,6 @@ export default function Login() {
 
           {step === "credentials" ? (
             <>
-              {/* Google sign-in */}
-              <div className="space-y-4">
-                <div className="nepal-field">
-                  <label htmlFor="google-role" className="nepal-label">{t('auth.signin_as')}</label>
-                  <select
-                    id="google-role"
-                    className="nepal-input"
-                    value={googleRole}
-                    onChange={(e) => setGoogleRole(e.target.value)}
-                  >
-                    <option value="volunteer">Volunteer</option>
-                    <option value="organization">Organization</option>
-                  </select>
-                </div>
-                <div id="googleSignIn" className="flex justify-center" />
-              </div>
- 
-              {/* divider */}
-              <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
-                <span className="h-px flex-1 bg-slate-100" />
-                {t('auth.signin_with_email')}
-                <span className="h-px flex-1 bg-slate-100" />
-              </div>
-
               {/* email / password form */}
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div className="nepal-field">
@@ -253,7 +182,21 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
- 
+
+                <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+                  <span className="h-px flex-1 bg-slate-100" />
+                  or continue with google
+                  <span className="h-px flex-1 bg-slate-100" />
+                </div>
+
+                <GoogleAuthButton
+                  role="volunteer"
+                  csrfToken={csrfToken}
+                  mountId="googleSignIn"
+                  onError={setError}
+                  onSuccess={() => navigate(from, { replace: true })}
+                />
+
                 <button className="nepal-button w-full shadow-lift" type="submit" disabled={loading}>
                   {loading ? (
                     <span className="flex items-center gap-2">

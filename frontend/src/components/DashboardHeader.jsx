@@ -1,8 +1,11 @@
+import { useTranslation } from "react-i18next";
+
 export default function DashboardHeader({ title, subtitle, actions }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-end justify-between gap-6">
       <div className="space-y-2">
-        <p className="eyebrow">Workspace</p>
+        <p className="eyebrow">{t("nav.workspace", "Workspace")}</p>
         <h2 className="section-title">{title}</h2>
         {subtitle ? (
           <p className="max-w-[620px] text-sm leading-6 text-muted">{subtitle}</p>

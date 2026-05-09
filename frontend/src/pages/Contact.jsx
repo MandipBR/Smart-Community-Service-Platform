@@ -9,9 +9,11 @@ export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState("");
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
+    console.info("[contact] Submission captured", form);
     setStatus(t("contact.success"));
+    setForm({ name: "", email: "", message: "" });
   };
 
   return (
@@ -104,3 +106,4 @@ export default function Contact() {
     </PageShell>
   );
 }
+

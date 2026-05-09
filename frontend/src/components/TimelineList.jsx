@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
+
 export default function TimelineList({ items = [] }) {
+  const { t } = useTranslation();
   if (!items.length) {
-    return <p className="text-sm text-muted">No activity yet.</p>;
+    return <p className="text-sm text-muted">{t("timeline.no_activity", "No activity yet.")}</p>;
   }
 
   return (

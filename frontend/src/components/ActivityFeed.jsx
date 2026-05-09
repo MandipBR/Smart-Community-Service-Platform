@@ -1,14 +1,17 @@
+import { useTranslation } from "react-i18next";
+
 export default function ActivityFeed({ items = [] }) {
+  const { t } = useTranslation();
   if (!items.length) {
     return (
       <div className="nepal-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="eyebrow">Activity</p>
-            <h3 className="mt-2 text-xl font-semibold text-ink">Recent updates</h3>
+            <p className="eyebrow">{t("dashboard.activity_feed", "Activity")}</p>
+            <h3 className="mt-2 text-xl font-semibold text-ink">{t("activity.recent_updates", "Recent updates")}</h3>
           </div>
         </div>
-        <p className="mt-6 text-sm text-muted">No recent activity yet.</p>
+        <p className="mt-6 text-sm text-muted">{t("dashboard.no_recent_activity", "No recent activity yet.")}</p>
       </div>
     );
   }
@@ -16,8 +19,8 @@ export default function ActivityFeed({ items = [] }) {
   return (
     <div className="nepal-card p-6">
       <div>
-        <p className="eyebrow">Activity</p>
-        <h3 className="mt-2 text-xl font-semibold text-ink">Recent updates</h3>
+        <p className="eyebrow">{t("dashboard.activity_feed", "Activity")}</p>
+        <h3 className="mt-2 text-xl font-semibold text-ink">{t("activity.recent_updates", "Recent updates")}</h3>
       </div>
 
       <div className="mt-6 space-y-3">

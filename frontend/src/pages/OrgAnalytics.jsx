@@ -38,7 +38,7 @@ export default function OrgAnalytics() {
         const allEvents = Array.isArray(res.data) ? res.data : [];
         const ownEvents = allEvents.filter((event) => {
           const owner = event.organization?._id || event.organization;
-          return owner === orgId;
+          return String(owner) === String(orgId);
         });
         setEvents(ownEvents);
       } catch (err) {
@@ -157,3 +157,4 @@ export default function OrgAnalytics() {
     </PageShell>
   );
 }
+

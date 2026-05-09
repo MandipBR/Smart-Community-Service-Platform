@@ -16,7 +16,7 @@ const impactLevel = (score) => {
 export const logHours = async (req, res) => {
   const parsed = validate(logHoursSchema, req.body, res);
   if (!parsed) return;
-  const { eventId, hours } = parsed;
+  const { eventId } = parsed;
 
   const event = await Event.findById(eventId);
   if (!event) {
@@ -51,7 +51,9 @@ export const logHours = async (req, res) => {
     return res.status(409).json({ message: "Hours already logged for this event" });
   }
 
-  const hoursNum = Number(hours);
+  // Authoritative source of hours is the event configuration set by the organization.
+  // Keep endpoint backward-compatible by accepting `hours` but not trusting it.
+  const hoursNum = Number(event.hours) || 1;
   const pointsEarned = hoursNum * 10;
 
   try {

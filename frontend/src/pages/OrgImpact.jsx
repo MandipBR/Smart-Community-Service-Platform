@@ -33,7 +33,7 @@ export default function OrgImpact() {
           ? reviewsRes.data.reviews
           : [];
         setOrg(orgRes.data);
-        setEvents(safeEvents.filter((event) => (event.organization?._id || event.organization) === id));
+        setEvents(safeEvents.filter((event) => String(event.organization?._id || event.organization) === String(id)));
         setReviews(safeReviews);
       } catch (err) {
         setMessage(err?.response?.data?.message || "Sync failed.");
@@ -150,8 +150,13 @@ export default function OrgImpact() {
                     <p className="mt-4 text-[15px] font-medium text-white/90 leading-relaxed">
                       Download your organization's quarterly community impact reports and data manifests.
                     </p>
-                    <button className="mt-10 w-full h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-sm font-bold uppercase tracking-widest hover:bg-white hover:text-brandBlue transition-all duration-500">
-                      Generate PDF Report
+                    <button
+                      type="button"
+                      disabled
+                      title="Coming soon"
+                      className="mt-10 w-full h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-sm font-bold uppercase tracking-widest opacity-70 cursor-not-allowed"
+                    >
+                      Generate PDF Report (Coming Soon)
                     </button>
                   </div>
                </section>
@@ -166,3 +171,4 @@ export default function OrgImpact() {
     </PageShell>
   );
 }
+

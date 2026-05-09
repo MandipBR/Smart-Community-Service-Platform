@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api, { hasToken } from "../services/api";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 import EventCard from "../components/EventCard.jsx";
 
 export default function RecommendedEvents() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState("");
   const [coords, setCoords] = useState(null);
@@ -22,7 +24,7 @@ export default function RecommendedEvents() {
   useEffect(() => {
     const load = async () => {
       if (!hasToken()) {
-        setMessage("Sign in to unlock personalized recommendations.");
+        setMessage(t("recommended.signin_required", "Sign in to unlock personalized recommendations."));
         setLoading(false);
         return;
       }
@@ -35,10 +37,10 @@ export default function RecommendedEvents() {
       } catch (err) {
         const status = err?.response?.status;
         if (status === 403) {
-          setMessage("Recommendations are only available for eligible signed-in accounts.");
+          setMessage(t("recommended.forbidden", "Recommendations are only available for eligible signed-in accounts."));
         } else {
           setMessage(
-            err?.response?.data?.message || "Unable to load recommendations."
+            err?.response?.data?.message || t("recommended.load_error", "Unable to load recommendations.")
           );
         }
       } finally {
@@ -47,23 +49,23 @@ export default function RecommendedEvents() {
     };
 
     load();
-  }, [coords]);
+  }, [coords, t]);
 
   return (
     <div className="nepal-page">
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/events", label: "Events" },
-            { to: "/nearby-events", label: "Nearby" },
-            { to: "/map", label: "Map" },
+            { to: "/events", label: t("common.nav_events", "Events") },
+            { to: "/nearby-events", label: t("common.nearby", "Nearby") },
+            { to: "/map", label: t("common.map", "Map") },
           ]}
         />
 
         <Hero
-          badge="AI Match"
-          title="Recommended for you"
-          subtitle="Personalized matches based on your skills, causes, and location."
+          badge={t("recommended.badge", "AI Match")}
+          title={t("recommended.title", "Recommended for you")}
+          subtitle={t("recommended.subtitle", "Personalized matches based on your skills, causes, and location.")}
         />
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
@@ -87,20 +89,20 @@ export default function RecommendedEvents() {
                 key={event._id}
                 id={event._id}
                 title={event.title}
-                location={event.location || "Location TBD"}
-                date={event.date ? new Date(event.date).toLocaleString() : "Date TBD"}
-                badge={`${event.matchScore}% match`}
-                tags={event.tags || event.skills || ["Community"]}
+                location={event.location || t("common.location_tbd", "Location TBD")}
+                date={event.date ? new Date(event.date).toLocaleString() : t("common.date_tbd", "Date TBD")}
+                badge={`${event.matchScore}% ${t("common.match", "match")}`}
+                tags={event.tags || event.skills || [t("common.community", "Community")]}
                 actions={
                   <Link className="nepal-button-secondary" to={`/events/${event._id}`}>
-                    View event
+                    {t("common.view_event", "View event")}
                   </Link>
                 }
               />
             ))}
 
           {!loading && events.length === 0 ? (
-            <p className="text-sm text-muted">No recommendations yet.</p>
+            <p className="text-sm text-muted">{t("recommended.empty", "No recommendations yet.")}</p>
           ) : null}
         </section>
       </div>

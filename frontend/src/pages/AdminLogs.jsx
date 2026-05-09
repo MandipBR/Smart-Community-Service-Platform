@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
 
 export default function AdminLogs() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState([]);
   const [message, setMessage] = useState("");
   const [page, setPage] = useState(1);
@@ -17,27 +19,27 @@ export default function AdminLogs() {
         setLogs(Array.isArray(res?.data?.data) ? res.data.data : []);
         setTotal(res.data.total || 0);
       } catch (err) {
-        setMessage(err?.response?.data?.message || "Unable to load admin logs.");
+        setMessage(err?.response?.data?.message || t("admin_logs.load_error", "Unable to load admin logs."));
       }
     };
     load();
-  }, [page]);
+  }, [page, t]);
 
   return (
     <div className="nepal-page">
       <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col gap-10 px-6 py-10">
         <Navbar
           links={[
-            { to: "/admin", label: "Approvals" },
-            { to: "/admin/analytics", label: "Analytics" },
-            { to: "/dashboard", label: "Dashboard" },
+            { to: "/admin", label: t("admin_logs.nav_approvals", "Approvals") },
+            { to: "/admin/analytics", label: t("admin_logs.nav_analytics", "Analytics") },
+            { to: "/dashboard", label: t("admin_logs.nav_dashboard", "Dashboard") },
           ]}
         />
 
         <Hero
-          badge="Admin Logs"
-          title="Audit activity"
-          subtitle="Track organization approvals, rejections, and moderation actions."
+          badge={t("admin_logs.badge", "Admin Logs")}
+          title={t("admin_logs.title", "Audit activity")}
+          subtitle={t("admin_logs.subtitle", "Track organization approvals, rejections, and moderation actions.")}
         />
 
         {message ? <div className="nepal-card p-4 text-sm text-brandRed">{message}</div> : null}
@@ -52,7 +54,7 @@ export default function AdminLogs() {
                 <div>
                   <p className="font-medium text-ink">{log.action}</p>
                   <p className="text-xs text-muted">
-                    {log.admin?.name || "Admin"} â€¢ {log.admin?.email || "system"}
+                    {log.admin?.name || t("admin_logs.admin_fallback", "Admin")} • {log.admin?.email || t("admin_logs.system_fallback", "system")}
                   </p>
                 </div>
                 <div className="text-xs text-muted">
@@ -61,7 +63,7 @@ export default function AdminLogs() {
               </div>
             ))}
             {logs.length === 0 ? (
-              <p className="text-sm text-muted">No admin logs yet.</p>
+              <p className="text-sm text-muted">{t("admin_logs.empty", "No admin logs yet.")}</p>
             ) : null}
           </div>
 
@@ -72,17 +74,20 @@ export default function AdminLogs() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
-                Previous
+                {t("common.previous", "Previous")}
               </button>
               <span className="text-xs text-muted">
-                Page {page} of {Math.max(1, Math.ceil(total / 10))}
+                {t("common.page_of", "Page {{page}} of {{total}}", {
+                  page,
+                  total: Math.max(1, Math.ceil(total / 10)),
+                })}
               </span>
               <button
                 className="nepal-button-secondary"
                 onClick={() => setPage((p) => Math.min(p + 1, Math.ceil(total / 10)))}
                 disabled={page >= Math.ceil(total / 10)}
               >
-                Next
+                {t("common.next", "Next")}
               </button>
             </div>
           ) : null}

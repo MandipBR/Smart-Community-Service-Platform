@@ -12,12 +12,21 @@ const awardHours = async ({ userId, eventId, hours }) => {
   if (existing) return existing;
 
   const pointsEarned = hours * 10;
-  const log = await VolunteerLog.create({
-    user: userId,
-    event: eventId,
-    hours,
-    pointsEarned,
-  });
+  let log;
+  try {
+    log = await VolunteerLog.create({
+      user: userId,
+      event: eventId,
+      hours,
+      pointsEarned,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      const duplicate = await VolunteerLog.findOne({ user: userId, event: eventId });
+      if (duplicate) return duplicate;
+    }
+    throw err;
+  }
 
   await User.updateOne(
     { _id: userId },
@@ -116,14 +125,6 @@ const upsertAttendance = async ({ userId, eventId, status }) => {
 export const markAttendance = async (req, res) => {
   try {
     const { userId, eventId, status } = req.body;
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[attendance/mark] req.body:", req.body);
-      console.log("[attendance/mark] req.user:", {
-        id: req.user?._id?.toString?.(),
-        role: req.user?.role,
-      });
-      console.log("[attendance/mark] payload ids:", { userId, eventId, status });
-    }
     if (!userId || !eventId || !status) {
       return res.status(400).json({
         message: "Invalid attendance data",

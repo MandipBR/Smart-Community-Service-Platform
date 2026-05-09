@@ -28,7 +28,7 @@ export const listOrganizations = async (req, res) => {
 
   const total = await User.countDocuments(filter);
   const orgs = await User.find(filter)
-    .select("name email organizationName organizationType orgApprovalStatus")
+    .select("name email organizationName organizationType orgApprovalStatus createdAt")
     .sort({ createdAt: sort })
     .skip((page - 1) * limit)
     .limit(limit);

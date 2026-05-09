@@ -1,8 +1,11 @@
+import { useTranslation } from "react-i18next";
+
 export default function LeaderboardTable({ rows = [] }) {
+  const { t } = useTranslation();
   if (!rows.length) {
     return (
       <div className="nepal-card p-6">
-        <p className="text-sm text-muted">No leaderboard data yet.</p>
+        <p className="text-sm text-muted">{t("leaderboard.no_data", "No leaderboard data yet.")}</p>
       </div>
     );
   }
@@ -10,10 +13,10 @@ export default function LeaderboardTable({ rows = [] }) {
   return (
     <div className="nepal-card p-6">
       <div className="grid grid-cols-5 text-xs uppercase tracking-[0.2em] text-muted">
-        <span>Rank</span>
-        <span className="col-span-2">Name</span>
-        <span>Hours</span>
-        <span>Badge</span>
+        <span>{t("common.rank", "Rank")}</span>
+        <span className="col-span-2">{t("common.name", "Name")}</span>
+        <span>{t("leaderboard.hours", "Hours")}</span>
+        <span>{t("common.badge", "Badge")}</span>
       </div>
       <div className="mt-4 space-y-2">
         {rows.map((row, index) => (

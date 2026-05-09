@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useTranslation } from "react-i18next";
 import authVibe from "../assets/i18n/auth-vibe.png";
+import GoogleAuthButton from "../components/GoogleAuthButton.jsx";
 
 export default function Signup() {
   const { t } = useTranslation();
@@ -160,6 +161,18 @@ export default function Signup() {
               </div>
             </div>
 
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+              <span className="h-px flex-1 bg-slate-100" />
+              or continue with google
+              <span className="h-px flex-1 bg-slate-100" />
+            </div>
+            <GoogleAuthButton
+              role="volunteer"
+              csrfToken={csrfToken}
+              mountId="googleSignUpVolunteer"
+              onError={setError}
+              onSuccess={() => navigate("/dashboard", { replace: true })}
+            />
             <button className="nepal-button w-full mt-4 shadow-lift" type="submit" disabled={loading}>
               {loading ? t('auth.creating_profile') : t('auth.create_account')}
             </button>

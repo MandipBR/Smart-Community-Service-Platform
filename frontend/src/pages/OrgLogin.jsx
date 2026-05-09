@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api, { setAuth } from "../services/api";
 import PageMeta from "../components/PageMeta.jsx";
+import GoogleAuthButton from "../components/GoogleAuthButton.jsx";
 
 export default function OrgLogin() {
   const [email, setEmail] = useState("");
@@ -24,57 +25,6 @@ export default function OrgLogin() {
     const secureFlag = import.meta.env.MODE === "production" ? "; Secure" : "";
     document.cookie = `g_csrf_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax${secureFlag}`;
   }, []);
-
-  useEffect(() => {
-    if (step !== "credentials") return;
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId || !csrfToken) return;
-
-    let attempts = 0;
-    const tryInit = () => {
-      if (!window.google?.accounts?.id) {
-        attempts += 1;
-        if (attempts < 20) setTimeout(tryInit, 150);
-        return;
-      }
-
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          try {
-            const res = await api.post("/auth/google", {
-              credential: response.credential,
-              csrfToken,
-              role: "organization",
-            });
-            if (res.data.user?.role !== "organization") {
-              setError("This Google account is not configured as an organization.");
-              return;
-            }
-            setAuth(res.data.token, res.data.user);
-            navigate("/dashboard");
-          } catch (err) {
-            setError(
-              err?.response?.data?.message || "Google sign-in failed. Please try again."
-            );
-          }
-        },
-      });
-
-      const mountNode = document.getElementById("googleSignInOrg");
-      if (mountNode) {
-        mountNode.innerHTML = "";
-        window.google.accounts.id.renderButton(mountNode, {
-          theme: "outline",
-          size: "large",
-          width: 380,
-          text: "continue_with",
-        });
-      }
-    };
-
-    tryInit();
-  }, [csrfToken, navigate, step]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -127,8 +77,11 @@ export default function OrgLogin() {
       }
       try {
         const res = await api.get(`/auth/org-status?email=${encodeURIComponent(value)}`);
-        const status = res.data.orgApprovalStatus;
-        if (status) setEmailStatus(status.charAt(0).toUpperCase() + status.slice(1));
+        if (!res.data?.exists) {
+          setEmailStatus("");
+          return;
+        }
+        setEmailStatus(res.data?.approved ? "Approved" : "Pending");
       } catch {
         setEmailStatus("");
       }
@@ -195,14 +148,6 @@ export default function OrgLogin() {
 
           {step === "credentials" ? (
           <form className="space-y-4" onSubmit={submit}>
-            <div id="googleSignInOrg" className="flex justify-center" />
-
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
-              <span className="h-px flex-1 bg-slate-100" />
-              or
-              <span className="h-px flex-1 bg-slate-100" />
-            </div>
-
             <div className="nepal-field">
               <label htmlFor="login-email" className="nepal-label">Organization Email</label>
               <div className="relative">
@@ -250,6 +195,27 @@ export default function OrgLogin() {
                 </button>
               </div>
             </div>
+
+            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-300">
+              <span className="h-px flex-1 bg-slate-100" />
+              or continue with google
+              <span className="h-px flex-1 bg-slate-100" />
+            </div>
+
+            <GoogleAuthButton
+              role="organization"
+              csrfToken={csrfToken}
+              mountId="googleSignInOrg"
+              onError={setError}
+              onSuccess={(payload) => {
+                if (payload?.user?.role !== "organization") {
+                  setError("This Google account is not configured as an organization.");
+                  return;
+                }
+                navigate("/dashboard");
+              }}
+              width={380}
+            />
 
             <button className="nepal-button w-full mt-2 btn-submit" type="submit" disabled={loading} aria-label="Submit organization sign in">
               {loading ? "Authenticating..." : "Sign In to Workspace"}
